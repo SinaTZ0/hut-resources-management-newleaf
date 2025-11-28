@@ -5,7 +5,22 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "lint": "next lint",
+    "lint:divider": "node utils/normalize-divider-comments.mjs",
+    "format": "prettier --write",
+    "format:check": "prettier --check",
+    "format:all": "prettier --write \"**/*.{js,jsx,ts,tsx}\"",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx,mjs,mts}": [
+      "prettier --write",
+      "node utils/normalize-divider-comments.mjs"
+    ],
+    "*.{json,md,css}": [
+      "prettier --write"
+    ]
   },
   "dependencies": {
     "next": "16.0.3",
@@ -13,10 +28,16 @@
     "react-dom": "19.2.0"
   },
   "devDependencies": {
+    "@commitlint/cli": "^20.1.0",
+    "@commitlint/config-conventional": "^20.0.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "eslint": "^9.39.1",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7",
+    "prettier": "^3.7.1",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
