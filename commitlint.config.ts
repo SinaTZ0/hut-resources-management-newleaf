@@ -1,4 +1,4 @@
-import type { UserConfig } from '@commitlint/types';
+import type { UserConfig } from '@commitlint/types'
 
 const Configuration: UserConfig = {
   extends: ['@commitlint/config-conventional'],
@@ -36,6 +36,6 @@ const Configuration: UserConfig = {
     // Body max line length
     'body-max-line-length': [2, 'always', 100],
   },
-};
+}
 
-export default Configuration;
+export default Configuration
