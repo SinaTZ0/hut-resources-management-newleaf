@@ -1,82 +1,124 @@
-import fs from 'fs';
-import path from 'path';
+import fs from 'fs'
+import path from 'path'
 
-const TARGET_LENGTH = 64;
+const TARGET_LENGTH = 64
 
-/* ------------------------- helpers -------------------------- */
+// ----------------- Comment Type Detection -----------------
 
-function isTargetLine(line) {
-  return (
-    (line.startsWith('/*-') && line.endsWith('-*/')) || // plain comment
-    (line.startsWith('{/*-') && line.endsWith('-*/}') && line.includes('*/}')) // TSX comment
-  );
+const COMMENT_PATTERNS = {
+  jsxBlock: {
+    match: (line) => line.startsWith('{/*-') && line.endsWith('-*/}'),
+    extract: (line) =>
+      line
+        .replace(/^\{\/\*\s*-*\s*/, '')
+        .replace(/\s*-*\s*\*\/\}$/, '')
+        .trim(),
+    format: (body, left, right) => `{/*${'-'.repeat(left)} ${body} ${'-'.repeat(right)}*/}`,
+  },
+  block: {
+    match: (line) => line.startsWith('/*-') && line.endsWith('-*/'),
+    extract: (line) =>
+      line
+        .replace(/^\/\*\s*-*\s*/, '')
+        .replace(/\s*-*\s*\*\/$/, '')
+        .trim(),
+    format: (body, left, right) => `/*${'-'.repeat(left)} ${body} ${'-'.repeat(right)}*/`,
+  },
+  line: {
+    match: (line) => line.startsWith('//-') && line.endsWith('-'),
+    extract: (line) =>
+      line
+        .replace(/^\/\/\s*-*\s*/, '')
+        .replace(/\s*-*\s*$/, '')
+        .trim(),
+    format: (body, left, right) => `// ${'-'.repeat(left)} ${body} ${'-'.repeat(right)}`,
+  },
+}
+
+// ------------------ Normalization Logic -------------------
+
+function detectCommentType(line) {
+  for (const [type, pattern] of Object.entries(COMMENT_PATTERNS)) {
+    if (pattern.match(line)) return type
+  }
+  return null
+}
+
+function isDividerComment(line) {
+  const type = detectCommentType(line)
+  if (!type) return false
+
+  const inner = COMMENT_PATTERNS[type].extract(line)
+  return inner.length > 0 && inner.length < 40
 }
 
 function normalizeLine(line) {
-  // strip outer markers and surrounding dashes / spaces
-  const inner = line
-    .replace(/^\{\/\*\s*-+/, '') // TSX opening
-    .replace(/^\/\*\s*-+/, '') // plain opening
-    .replace(/-+\s*\*\/\}$/, '') // TSX closing
-    .replace(/-+\s*\*\/$/, '') // plain closing
-    .trim();
+  const type = detectCommentType(line)
+  if (!type) return line
 
-  const body = ` ${inner} `;
-  const side = Math.max(0, TARGET_LENGTH - body.length - 4); // 4 = "/*" + " */"
-  const left = Math.floor(side / 2);
-  const right = side - left;
+  const pattern = COMMENT_PATTERNS[type]
+  const body = pattern.extract(line)
 
-  // restore the braces if the original line had them
-  const open = line.startsWith('{') ? '{' : '';
-  const close = line.endsWith('}') ? '}' : '';
+  const overhead = type === 'line' ? 6 : 4 // "// " + " " vs "/*" + "*/"
+  const availableSpace = Math.max(0, TARGET_LENGTH - body.length - 2 - overhead)
+  const left = Math.floor(availableSpace / 2)
+  const right = availableSpace - left
 
-  return `${open}/*${'-'.repeat(left)}${body}${'-'.repeat(right)}*/${close}`;
+  return pattern.format(body, left, right)
 }
 
-/* ----------------------- file system ------------------------ */
+// ----------------- File System Utilities ------------------
 
-function walk(dir, cb) {
-  const stat = fs.statSync(dir);
-  if (stat.isFile()) return cb(dir);
+function walkPath(targetPath, callback) {
+  const stat = fs.statSync(targetPath)
 
-  fs.readdirSync(dir).forEach((ent) => {
-    const full = path.join(dir, ent);
-    walk(full, cb);
-  });
-}
+  if (stat.isFile()) {
+    callback(targetPath)
+    return
+  }
 
-function processFile(filePath) {
-  const lines = fs.readFileSync(filePath, 'utf8').split(/\r?\n/);
-  let changed = false;
-
-  const out = lines.map((raw) => {
-    const trimmed = raw.trimStart();
-    if (!isTargetLine(trimmed)) return raw;
-
-    const prefix = raw.slice(0, raw.length - trimmed.length); // keep indentation
-    const updated = normalizeLine(trimmed);
-    changed = true;
-    return prefix + updated;
-  });
-
-  if (changed) {
-    fs.writeFileSync(filePath, out.join('\n'), 'utf8');
-    console.log(`✔  ${filePath}`);
+  for (const entry of fs.readdirSync(targetPath)) {
+    walkPath(path.join(targetPath, entry), callback)
   }
 }
 
-/* --------------------------- cli ---------------------------- */
-// Get all arguments starting from index 2
-const targets = process.argv.slice(2);
+function processFile(filePath) {
+  const content = fs.readFileSync(filePath, 'utf8')
+  const lines = content.split(/\r?\n/)
+  let hasChanges = false
 
-if (targets.length === 0) {
-  console.error('Usage: node fix-dividers.mjs <file-or-folder> [more-files...]');
-  process.exit(1);
+  const normalizedLines = lines.map((rawLine) => {
+    const trimmedLine = rawLine.trimStart()
+    if (!isDividerComment(trimmedLine)) return rawLine
+
+    const indentation = rawLine.slice(0, rawLine.length - trimmedLine.length)
+    const normalizedLine = normalizeLine(trimmedLine)
+
+    if (trimmedLine !== normalizedLine) hasChanges = true
+    return indentation + normalizedLine
+  })
+
+  if (hasChanges) {
+    fs.writeFileSync(filePath, normalizedLines.join('\n'), 'utf8')
+    console.log(`✔  ${filePath}`)
+  }
 }
 
-// Iterate over every target provided
-targets.forEach((target) => {
-  walk(path.resolve(target), processFile);
-});
+// -------------------- CLI Entry Point ---------------------
 
-console.log('\nDone.');
+function main() {
+  const targets = process.argv.slice(2)
+
+  if (targets.length === 0) {
+    console.error('Usage: node normalize-divider-comments.mjs <file-or-folder> [more...]')
+    process.exit(1)
+  }
+
+  for (const target of targets) {
+    walkPath(path.resolve(target), processFile)
+  }
+
+  console.log('\nDone.')
+}
+
+main()

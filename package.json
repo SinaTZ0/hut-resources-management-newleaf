@@ -6,9 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "lint:divider": "node utils/normalize-divider-comments.mjs",
     "format": "prettier --write",
+    "format:divider": "node utils/normalize-divider-comments.mjs",
     "format:check": "prettier --check",
     "format:all": "prettier --write \"**/*.{js,jsx,ts,tsx}\"",
     "prepare": "husky"
