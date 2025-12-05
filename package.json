@@ -26,7 +26,10 @@
     ]
   },
   "dependencies": {
+    "drizzle-orm": "^0.45.0",
+    "drizzle-zod": "^0.8.3",
     "next": "16.0.7",
+    "pg": "^8.16.3",
     "react": "19.2.1",
     "react-dom": "19.2.1"
   },
@@ -37,8 +40,10 @@
     "@tailwindcss/postcss": "^4",
     "@types/eslint-plugin-jsx-a11y": "^6.10.1",
     "@types/node": "^24",
+    "@types/pg": "^8.15.6",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "drizzle-kit": "^0.31.8",
     "eslint": "^9.39.1",
     "eslint-import-resolver-typescript": "^4.4.4",
     "eslint-plugin-import": "^2.32.0",
