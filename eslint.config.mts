@@ -59,7 +59,7 @@ export default defineConfig([
     },
     rules: {
       // Import rules
-      'import/no-cycle': 'warn',
+      'import/no-cycle': 'error',
 
       // Import organization
       'import/order': [
@@ -143,7 +143,7 @@ export default defineConfig([
     },
     rules: {
       // Import rules
-      'import/no-cycle': 'warn',
+      'import/no-cycle': 'error',
 
       // Import organization
       'import/order': [
