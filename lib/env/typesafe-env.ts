@@ -11,8 +11,8 @@ const clientEnvironmentSchema = z.object({
 })
 
 /*--------------- Parse Environment Variables ----------------*/
-const serverEnvironment = serverEnvironmentSchema.parse(process.env)
-const clientEnvironment = clientEnvironmentSchema.parse(process.env)
+export const serverEnvironment = serverEnvironmentSchema.parse(process.env)
+export const clientEnvironment = clientEnvironmentSchema.parse(process.env)
 
 /*------------------- Combined Environment -------------------*/
 const environment = {
