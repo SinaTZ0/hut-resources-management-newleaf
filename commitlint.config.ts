@@ -19,6 +19,7 @@ const Configuration: UserConfig = {
         'ci', // CI/CD configuration
         'chore', // Other changes that don't modify src or test files
         'revert', // Revert a previous commit
+        'tool', // Integration of development tools or packaqges
       ],
     ],
     // Require type to be lowercase
