@@ -19,6 +19,7 @@
   "lint-staged": {
     "*.{js,jsx,ts,tsx,mjs,mts}": [
       "prettier --write",
+      "eslint --fix",
       "node utils/normalize-divider-comments.mjs"
     ],
     "*.{json,md,css}": [
@@ -94,7 +95,6 @@
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-sonarjs": "^3.0.5",
-    "eslint-plugin-unicorn": "^62.0.0",
     "husky": "^9.1.7",
     "jiti": "^2.6.1",
     "lint-staged": "^16.2.7",

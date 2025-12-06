@@ -5,7 +5,6 @@ import importPlugin from 'eslint-plugin-import'
 import jsxA11y from 'eslint-plugin-jsx-a11y'
 import globals from 'globals'
 import sonarjs from 'eslint-plugin-sonarjs'
-import eslintPluginUnicorn from 'eslint-plugin-unicorn'
 import reactHooks from 'eslint-plugin-react-hooks'
 import reactPlugin from 'eslint-plugin-react'
 import eslintPluginNext from '@next/eslint-plugin-next'
@@ -18,6 +17,7 @@ export default defineConfig([
     'build/**',
     'next-env.d.ts',
     'utils/normalize-divider-comments.mjs',
+    'components/ui/**',
   ]),
 
   // JavaScript files
@@ -29,7 +29,6 @@ export default defineConfig([
       importPlugin.flatConfigs.recommended,
       jsxA11y.flatConfigs.recommended,
       sonarjs.configs.recommended,
-      eslintPluginUnicorn.configs.recommended,
       reactHooks.configs.flat['recommended-latest'],
       reactPlugin.configs.flat.recommended,
       reactPlugin.configs.flat['jsx-runtime'],
@@ -92,9 +91,6 @@ export default defineConfig([
       'jsx-a11y/aria-unsupported-elements': 'warn',
       'jsx-a11y/role-has-required-aria-props': 'warn',
       'jsx-a11y/role-supports-aria-props': 'warn',
-
-      // unicorn
-      'unicorn/prevent-abbreviations': 'off',
     },
   },
 
@@ -107,7 +103,6 @@ export default defineConfig([
       importPlugin.flatConfigs.recommended,
       jsxA11y.flatConfigs.recommended,
       sonarjs.configs.recommended,
-      eslintPluginUnicorn.configs.recommended,
       reactHooks.configs.flat['recommended-latest'],
       reactPlugin.configs.flat.recommended,
       reactPlugin.configs.flat['jsx-runtime'],
@@ -176,9 +171,6 @@ export default defineConfig([
       'jsx-a11y/aria-unsupported-elements': 'warn',
       'jsx-a11y/role-has-required-aria-props': 'warn',
       'jsx-a11y/role-supports-aria-props': 'warn',
-
-      // unicorn
-      'unicorn/prevent-abbreviations': 'off',
     },
   },
 ])
