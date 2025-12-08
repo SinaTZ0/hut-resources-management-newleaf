@@ -168,16 +168,16 @@ export function FieldBuilder({ onAdd, existingKeys }: FieldBuilderProps) {
       </div>
 
       {/*------------------------ Add Button ------------------------*/}
-      <div className='flex justify-end'>
-        <Button
-          type='button'
-          data-testid='builder-add'
-          aria-label='Add field'
-          onClick={() => void handleSubmit(onSubmit)()}
-        >
-          Add +
-        </Button>
-      </div>
+      <Button
+        className='w-full'
+        type='button'
+        variant={'secondary'}
+        data-testid='builder-add'
+        aria-label='Add field'
+        onClick={() => void handleSubmit(onSubmit)()}
+      >
+        Add +
+      </Button>
     </div>
   )
 }

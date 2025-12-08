@@ -7,6 +7,8 @@ import { z } from 'zod'
 import { FIELD_TYPES, type fieldDefinitionSchemaType } from '@/lib/drizzle/schema'
 import { Form } from '@/components/ui/form'
 import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Separator } from '@/components/ui/separator'
 
 import { FieldBuilder } from './field-builder'
 import { SavedFieldsList } from './saved-fields-list'
@@ -89,37 +91,57 @@ export default function CreateEntityForm() {
         onSubmit={(e) => {
           void handleSubmit(onParentSubmit)(e)
         }}
-        className='space-y-6'
+        className='flex flex-col max-w-4xl m-auto gap-8'
       >
         {/*-------------------------- Header --------------------------*/}
-        <div className='flex justify-between items-center'>
-          <h2 className='text-lg font-semibold'>Create Entity</h2>
+        <div className='flex flex-col gap-2'>
+          <h1 className='text-3xl font-bold tracking-tight'>Create New Entity</h1>
+          <p className='text-muted-foreground'>
+            Define the structure and properties of a new resource type in your system.
+          </p>
         </div>
 
+        {/*----------------------- Main Content -----------------------*/}
         {/*----------------------- Entity Info ------------------------*/}
-        <EntityInfoForm form={parentForm} />
-
-        {/*------------------ Builder & Saved Fields ------------------*/}
-        <div className='grid md:grid-cols-2 gap-6'>
-          {/*---------------------- Field Builder -----------------------*/}
-          <div className='p-4 border rounded-lg bg-muted'>
-            <h3 id='builder-heading' className='text-sm font-medium mb-4'>
-              Staging / Builder
-            </h3>
-            <FieldBuilder onAdd={handleAddField} existingKeys={savedFields.map((f) => f.key)} />
-          </div>
-
-          {/*-------------------- Saved Fields List ---------------------*/}
-          <div className='p-4 border rounded-lg'>
-            <h3 className='text-sm font-medium mb-4'>Saved Fields</h3>
-            <SavedFieldsList fields={savedFields} onRemove={remove} />
-          </div>
+        <div className='flex flex-col gap-4'>
+          <h2 className='text-xl font-semibold'>1. Entity Details</h2>
+          <Separator />
+          <EntityInfoForm form={parentForm} />
         </div>
-
+        {/*---------------------- Field Builder -----------------------*/}
+        <div className='flex flex-col gap-4'>
+          <h2 className='text-xl font-semibold'>2. Define Fields</h2>
+          <Separator />
+          <p className='text-muted-foreground text-sm'>
+            Configure and add a new field to your entity.
+          </p>
+          <Card className='border-primary/20 shadow-md border-dashed border-4'>
+            <CardContent className=''>
+              <FieldBuilder onAdd={handleAddField} existingKeys={savedFields.map((f) => f.key)} />
+            </CardContent>
+          </Card>
+        </div>
+        {/*-------------------- Saved Fields List ---------------------*/}
+        <Card>
+          <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
+            <div className='flex flex-col space-y-1.5'>
+              <CardTitle>Entity Fields</CardTitle>
+              <CardDescription>
+                The data fields that make up this entity. Add fields using the builder on the right.
+              </CardDescription>
+            </div>
+            <div className='text-sm text-muted-foreground bg-muted px-2 py-1 rounded-md'>
+              {savedFields.length} Fields Configured
+            </div>
+          </CardHeader>
+          <CardContent>
+            <SavedFieldsList fields={savedFields} onRemove={remove} />
+          </CardContent>
+        </Card>
         {/*---------------------- Submit Button -----------------------*/}
-        <div className='flex items-center justify-end'>
-          <Button type='submit' data-testid='save-entity'>
-            Save
+        <div className='flex justify-end'>
+          <Button type='submit' size='lg' data-testid='save-entity'>
+            Create Entity
           </Button>
         </div>
       </form>
