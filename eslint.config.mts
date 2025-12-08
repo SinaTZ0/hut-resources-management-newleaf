@@ -137,6 +137,9 @@ export default defineConfig([
       },
     },
     rules: {
+      //typescript rules
+      '@typescript-eslint/no-confusing-void-expression': 'off',
+
       // Import rules
       'import/no-cycle': 'error',
 

@@ -1,25 +1,127 @@
 'use client'
 
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core'
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
+
 import { type fieldDefinitionSchemaType } from '@/lib/drizzle/schema'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
-import { Trash2 } from 'lucide-react'
+import { Card, CardContent } from '@/components/ui/card'
+import { GripVertical, Trash2 } from 'lucide-react'
 
 interface SavedFieldsListProps {
   readonly fields: Array<fieldDefinitionSchemaType & { key: string; id: string }>
   readonly onRemove: (index: number) => void
+  readonly onReorder: (oldIndex: number, newIndex: number) => void
+}
+
+/*---------------------- Sortable Item -----------------------*/
+function SortableFieldItem({
+  field,
+  onRemove,
+}: Readonly<{
+  field: fieldDefinitionSchemaType & { key: string; id: string }
+  onRemove: () => void
+}>) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: field.id,
+  })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 1 : 0,
+    opacity: isDragging ? 0.5 : 1,
+  }
+
+  return (
+    <div ref={setNodeRef} style={style} className='mb-2'>
+      <Card>
+        <CardContent className='flex flex-row items-center gap-4'>
+          {/*----------------------- Drag Handle ------------------------*/}
+          <div
+            {...attributes}
+            {...listeners}
+            className='cursor-grab active:cursor-grabbing text-muted-foreground/50 hover:text-foreground'
+          >
+            <GripVertical className='h-5 w-5' />
+          </div>
+
+          {/*----------------------- Label & Key ------------------------*/}
+          <div className='flex flex-col flex-1 min-w-0'>
+            <span className='font-medium truncate'>{field.label}</span>
+            <span className='font-mono text-xs text-muted-foreground truncate'>{field.key}</span>
+          </div>
+
+          {/*--------------------------- Type ---------------------------*/}
+          <Badge variant='secondary' className='rounded-sm font-normal'>
+            {field.type}
+          </Badge>
+
+          {/*------------------------ Attributes ------------------------*/}
+          <div className='hidden sm:flex gap-2'>
+            {field.required && (
+              <Badge variant='outline' className='text-xs'>
+                Required
+              </Badge>
+            )}
+            {field.sortable && (
+              <Badge variant='outline' className='text-xs'>
+                Sortable
+              </Badge>
+            )}
+          </div>
+
+          {/*------------------------- Actions --------------------------*/}
+          <Button
+            type='button'
+            variant='ghost'
+            size='icon'
+            className='h-8 w-8 text-muted-foreground hover:text-destructive shrink-0'
+            onClick={onRemove}
+            data-testid={`saved-remove-${field.key}`}
+          >
+            <Trash2 className='h-4 w-4' />
+          </Button>
+        </CardContent>
+      </Card>
+    </div>
+  )
 }
 
 /*------------------------ Component -------------------------*/
-export function SavedFieldsList({ fields, onRemove }: SavedFieldsListProps) {
+export function SavedFieldsList({ fields, onRemove, onReorder }: SavedFieldsListProps) {
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  )
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event
+
+    if (active.id !== over?.id) {
+      const oldIndex = fields.findIndex((f) => f.id === active.id)
+      const newIndex = fields.findIndex((f) => f.id === over?.id)
+      onReorder(oldIndex, newIndex)
+    }
+  }
+
   /*-------------------------- Render --------------------------*/
   if (fields.length === 0) {
     return (
@@ -36,62 +138,20 @@ export function SavedFieldsList({ fields, onRemove }: SavedFieldsListProps) {
   }
 
   return (
-    <div className='border rounded-md'>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Label</TableHead>
-            <TableHead>Key</TableHead>
-            <TableHead>Type</TableHead>
-            <TableHead>Attributes</TableHead>
-            <TableHead className='w-20'></TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {fields.map((field, idx) => (
-            <TableRow key={field.id} data-testid={`saved-field-${field.key}`}>
-              <TableCell className='font-medium'>{field.label}</TableCell>
-              <TableCell className='font-mono text-xs'>{field.key}</TableCell>
-              <TableCell>
-                <Badge variant='secondary' className='rounded-sm font-normal'>
-                  {field.type}
-                </Badge>
-              </TableCell>
-              <TableCell>
-                <div className='flex gap-2'>
-                  {field.required && (
-                    <Badge variant='outline' className='text-xs'>
-                      Required
-                    </Badge>
-                  )}
-                  {field.sortable && (
-                    <Badge variant='outline' className='text-xs'>
-                      Sortable
-                    </Badge>
-                  )}
-                  {!field.required && !field.sortable && (
-                    <span className='text-muted-foreground text-xs'>-</span>
-                  )}
-                </div>
-              </TableCell>
-              <TableCell>
-                <Button
-                  type='button'
-                  variant='ghost'
-                  size='icon'
-                  className='h-8 w-8 text-muted-foreground hover:text-destructive'
-                  onClick={() => {
-                    onRemove(idx)
-                  }}
-                  data-testid={`saved-remove-${field.key}`}
-                >
-                  <Trash2 className='h-4 w-4' />
-                </Button>
-              </TableCell>
-            </TableRow>
+    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+      <SortableContext items={fields} strategy={verticalListSortingStrategy}>
+        <div className='flex flex-col'>
+          {fields.map((field, index) => (
+            <SortableFieldItem
+              key={field.id}
+              field={field}
+              onRemove={() => {
+                onRemove(index)
+              }}
+            />
           ))}
-        </TableBody>
-      </Table>
-    </div>
+        </div>
+      </SortableContext>
+    </DndContext>
   )
 }

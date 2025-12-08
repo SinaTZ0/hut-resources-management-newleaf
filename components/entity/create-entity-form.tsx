@@ -51,6 +51,7 @@ export default function CreateEntityForm() {
     fields: savedFields,
     append,
     remove,
+    move,
   } = useFieldArray({
     control,
     name: 'fields',
@@ -64,16 +65,20 @@ export default function CreateEntityForm() {
     })
   }
 
+  const handleReorder = (oldIndex: number, newIndex: number) => {
+    move(oldIndex, newIndex)
+  }
+
   const onParentSubmit = (data: ParentFormValues) => {
     /*---------------- Transform to depth1Schema -----------------*/
     const depth1Schema: Record<string, fieldDefinitionSchemaType> = {}
-    data.fields.forEach((f) => {
+    data.fields.forEach((f, idx) => {
       depth1Schema[f.key] = {
         label: f.label,
         type: f.type,
         sortable: f.sortable,
         required: f.required,
-        order: f.order,
+        order: idx, // Use the current index as the order
       }
     })
 
@@ -104,7 +109,15 @@ export default function CreateEntityForm() {
         {/*----------------------- Main Content -----------------------*/}
         {/*----------------------- Entity Info ------------------------*/}
         <div className='flex flex-col gap-4'>
-          <h2 className='text-xl font-semibold'>1. Entity Details</h2>
+          <div className='flex items-center justify-between'>
+            <h2 className='text-xl font-semibold'>1. Entity Details</h2>
+            {/*---------------------- Submit Button -----------------------*/}
+            <div className='flex justify-end'>
+              <Button type='submit' size='lg' data-testid='save-entity'>
+                Create Entity
+              </Button>
+            </div>
+          </div>
           <Separator />
           <EntityInfoForm form={parentForm} />
         </div>
@@ -135,15 +148,9 @@ export default function CreateEntityForm() {
             </div>
           </CardHeader>
           <CardContent>
-            <SavedFieldsList fields={savedFields} onRemove={remove} />
+            <SavedFieldsList fields={savedFields} onRemove={remove} onReorder={handleReorder} />
           </CardContent>
         </Card>
-        {/*---------------------- Submit Button -----------------------*/}
-        <div className='flex justify-end'>
-          <Button type='submit' size='lg' data-testid='save-entity'>
-            Create Entity
-          </Button>
-        </div>
       </form>
     </Form>
   )
