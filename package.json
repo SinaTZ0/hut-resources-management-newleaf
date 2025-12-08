@@ -9,6 +9,7 @@
     "lint": "eslint",
     "lint:all": "eslint .",
     "lint:fix": "eslint . --fix",
+    "type-check": "tsc --noEmit",
     "format": "prettier --write",
     "format:divider": "node utils/normalize-divider-comments.mjs",
     "format:check": "prettier --check",
@@ -78,8 +79,8 @@
     "zod": "^4.1.13"
   },
   "devDependencies": {
-    "@commitlint/cli": "^20.1.0",
-    "@commitlint/config-conventional": "^20.0.0",
+    "@commitlint/cli": "^20.2.0",
+    "@commitlint/config-conventional": "^20.2.0",
     "@next/eslint-plugin-next": "^16.0.7",
     "@tailwindcss/postcss": "^4",
     "@types/eslint-plugin-jsx-a11y": "^6.10.1",
@@ -101,7 +102,7 @@
     "prettier": "^3.7.4",
     "tailwindcss": "^4",
     "tw-animate-css": "^1.4.0",
-    "type-fest": "^5.3.0",
+    "type-fest": "^5.3.1",
     "typescript": "^5",
     "typescript-eslint": "^8.48.1"
   }
