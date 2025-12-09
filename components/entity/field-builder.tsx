@@ -76,7 +76,7 @@ export function FieldBuilder({ onAdd, existingKeys }: FieldBuilderProps) {
 
   /*-------------------------- Render --------------------------*/
   return (
-    <div role='group' aria-labelledby='builder-heading' className='space-y-3'>
+    <div role='group' aria-labelledby='builder-heading' className='flex flex-col gap-4'>
       {/*----------------------- Label Input ------------------------*/}
       <div>
         <label htmlFor='builder-label' className='mb-1 block text-sm font-medium'>

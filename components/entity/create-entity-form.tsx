@@ -113,7 +113,12 @@ export default function CreateEntityForm() {
             <h2 className='text-xl font-semibold'>1. Entity Details</h2>
             {/*---------------------- Submit Button -----------------------*/}
             <div className='flex justify-end'>
-              <Button type='submit' size='lg' data-testid='save-entity'>
+              <Button
+                type='submit'
+                size='lg'
+                data-testid='save-entity'
+                className='w-full sm:w-auto shadow-lg shadow-primary/20'
+              >
                 Create Entity
               </Button>
             </div>
@@ -139,9 +144,7 @@ export default function CreateEntityForm() {
           <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
             <div className='flex flex-col space-y-1.5'>
               <CardTitle>Entity Fields</CardTitle>
-              <CardDescription>
-                The data fields that make up this entity. Add fields using the builder on the right.
-              </CardDescription>
+              <CardDescription>Add fields using the builder on the top.</CardDescription>
             </div>
             <div className='text-sm text-muted-foreground bg-muted px-2 py-1 rounded-md'>
               {savedFields.length} Fields Configured

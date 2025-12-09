@@ -50,53 +50,54 @@ function SortableFieldItem({
 
   return (
     <div ref={setNodeRef} style={style} className='mb-2'>
-      <Card>
-        <CardContent className='flex flex-row items-center gap-4'>
-          {/*----------------------- Drag Handle ------------------------*/}
-          <div
-            {...attributes}
-            {...listeners}
-            className='cursor-grab active:cursor-grabbing text-muted-foreground/50 hover:text-foreground'
-          >
-            <GripVertical className='h-5 w-5' />
+      <Card className='py-2 bg-card-foreground/5'>
+        <CardContent className='flex flex-row justify-between w-full'>
+          <div className='flex flex-row items-center'>
+            {/*----------------------- Drag Handle ------------------------*/}
+            <div
+              {...attributes}
+              {...listeners}
+              className='cursor-grab active:cursor-grabbing text-muted-foreground/50 hover:text-foreground'
+            >
+              <GripVertical className='size-8 -ml-5' />
+            </div>
+            {/*----------------------- Label & Key ------------------------*/}
+            <div className='flex flex-col'>
+              <span className='font-medium truncate'>{field.label}</span>
+              <span className='font-mono text-xs text-muted-foreground truncate'>{field.key}</span>
+            </div>
           </div>
 
-          {/*----------------------- Label & Key ------------------------*/}
-          <div className='flex flex-col flex-1 min-w-0'>
-            <span className='font-medium truncate'>{field.label}</span>
-            <span className='font-mono text-xs text-muted-foreground truncate'>{field.key}</span>
-          </div>
-
-          {/*--------------------------- Type ---------------------------*/}
-          <Badge variant='secondary' className='rounded-sm font-normal'>
-            {field.type}
-          </Badge>
-
-          {/*------------------------ Attributes ------------------------*/}
-          <div className='hidden sm:flex gap-2'>
-            {field.required && (
-              <Badge variant='outline' className='text-xs'>
-                Required
+          <div className='flex flex-row gap-2 items-center '>
+            <div className='flex flex-col sm:flex-row gap-1 items-center'>
+              {/*--------------------------- Type ---------------------------*/}
+              <Badge variant='secondary' className='rounded-sm font-normal'>
+                {field.type}
               </Badge>
-            )}
-            {field.sortable && (
-              <Badge variant='outline' className='text-xs'>
-                Sortable
-              </Badge>
-            )}
+              {/*------------------------ Attributes ------------------------*/}
+              {field.required && (
+                <Badge variant='outline' className='text-xs'>
+                  Required
+                </Badge>
+              )}
+              {field.sortable && (
+                <Badge variant='outline' className='text-xs'>
+                  Sortable
+                </Badge>
+              )}
+            </div>
+            {/*------------------------- Actions --------------------------*/}
+            <Button
+              type='button'
+              variant='ghost'
+              size='icon'
+              className='h-8 w-8 text-muted-foreground hover:text-destructive shrink-0'
+              onClick={onRemove}
+              data-testid={`saved-remove-${field.key}`}
+            >
+              <Trash2 className='size-4' />
+            </Button>
           </div>
-
-          {/*------------------------- Actions --------------------------*/}
-          <Button
-            type='button'
-            variant='ghost'
-            size='icon'
-            className='h-8 w-8 text-muted-foreground hover:text-destructive shrink-0'
-            onClick={onRemove}
-            data-testid={`saved-remove-${field.key}`}
-          >
-            <Trash2 className='h-4 w-4' />
-          </Button>
         </CardContent>
       </Card>
     </div>
