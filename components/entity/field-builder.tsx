@@ -4,7 +4,7 @@ import { z } from 'zod'
 import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 
-import { type fieldDefinitionSchemaType, FIELD_TYPES } from '@/lib/drizzle/schema'
+import { type FieldSchemaType, FIELD_TYPES } from '@/lib/drizzle/schema'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import {
@@ -18,7 +18,7 @@ import {
 import { Switch } from '@/components/ui/switch'
 
 interface FieldBuilderProps {
-  readonly onAdd: (field: fieldDefinitionSchemaType & { key: string }) => void
+  readonly onAdd: (field: FieldSchemaType & { key: string }) => void
   readonly existingKeys: string[]
 }
 

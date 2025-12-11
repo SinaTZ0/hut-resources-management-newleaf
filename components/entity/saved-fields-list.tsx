@@ -17,14 +17,14 @@ import {
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 
-import { type fieldDefinitionSchemaType } from '@/lib/drizzle/schema'
+import { type FieldSchemaType } from '@/lib/drizzle/schema'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { GripVertical, Trash2 } from 'lucide-react'
 
 interface SavedFieldsListProps {
-  readonly fields: Array<fieldDefinitionSchemaType & { key: string; id: string }>
+  readonly fields: Array<FieldSchemaType & { key: string; id: string }>
   readonly onRemove: (index: number) => void
   readonly onReorder: (oldIndex: number, newIndex: number) => void
 }
@@ -34,7 +34,7 @@ function SortableFieldItem({
   field,
   onRemove,
 }: Readonly<{
-  field: fieldDefinitionSchemaType & { key: string; id: string }
+  field: FieldSchemaType & { key: string; id: string }
   onRemove: () => void
 }>) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({

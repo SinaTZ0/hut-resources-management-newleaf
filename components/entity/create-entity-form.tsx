@@ -4,7 +4,12 @@ import { useForm, useFieldArray } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 
-import { FIELD_TYPES, type fieldDefinitionSchemaType } from '@/lib/drizzle/schema'
+import {
+  FIELD_TYPES,
+  type FieldSchemaType,
+  EntitySchema,
+  type EntitySchemaType,
+} from '@/lib/drizzle/schema'
 import { Form } from '@/components/ui/form'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -58,7 +63,7 @@ export default function CreateEntityForm() {
   })
 
   /*------------------------- Handlers -------------------------*/
-  const handleAddField = (field: fieldDefinitionSchemaType & { key: string }) => {
+  const handleAddField = (field: FieldSchemaType & { key: string }) => {
     append({
       ...field,
       id: `${field.key}-${String(Date.now())}`,
@@ -71,7 +76,7 @@ export default function CreateEntityForm() {
 
   const onParentSubmit = (data: ParentFormValues) => {
     /*---------------- Transform to depth1Schema -----------------*/
-    const depth1Schema: Record<string, fieldDefinitionSchemaType> = {}
+    const depth1Schema: Record<string, FieldSchemaType> = {}
     data.fields.forEach((f, idx) => {
       depth1Schema[f.key] = {
         label: f.label,
@@ -81,12 +86,21 @@ export default function CreateEntityForm() {
         order: idx, // Use the current index as the order
       }
     })
-
-    console.log('Entity payload:', {
+    /*---------------- Build payload and validate ----------------*/
+    const payload: EntitySchemaType = {
       name: data.name,
-      description: data.description,
+      description: data.description || undefined,
       depth1Schema,
-    })
+    }
+
+    const result = EntitySchema.safeParse(payload)
+    if (!result.success) {
+      // For now, log validation errors — in the future we can surface to the form UI
+      console.error('Entity insert validation failed:', result.error)
+      return
+    }
+
+    console.log('Entity payload validated:', result.data)
   }
 
   /*-------------------------- Render --------------------------*/
