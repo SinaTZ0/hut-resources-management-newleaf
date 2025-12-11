@@ -139,7 +139,14 @@ export default defineConfig([
     rules: {
       //typescript rules
       '@typescript-eslint/no-confusing-void-expression': 'off',
-
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+          caughtErrorsIgnorePattern: '^_',
+        },
+      ],
       // Import rules
       'import/no-cycle': 'error',
 
