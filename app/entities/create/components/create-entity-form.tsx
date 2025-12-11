@@ -14,10 +14,9 @@ import { Form } from '@/components/ui/form'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
-
+import { EntityInfoForm } from './entity-info-form'
 import { FieldBuilder } from './field-builder'
 import { SavedFieldsList } from './saved-fields-list'
-import { EntityInfoForm } from './entity-info-form'
 
 /*---------------------- Parent Schema -----------------------*/
 const parentSchema = z.object({

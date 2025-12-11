@@ -1,4 +1,4 @@
-import CreateEntityForm from '@/components/entity/create-entity-form'
+import CreateEntityForm from '@/app/entities/create/components/create-entity-form'
 
 export default function Page() {
   return (
