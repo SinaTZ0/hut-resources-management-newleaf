@@ -18,13 +18,15 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 
 import { type FieldSchemaType } from '@/lib/drizzle/schema'
+
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { GripVertical, Trash2 } from 'lucide-react'
+import { toSnakeCase } from '@/lib/utils/common-utils'
 
 interface SavedFieldsListProps {
-  readonly fields: Array<FieldSchemaType & { key: string; id: string }>
+  readonly fields: FieldSchemaType[]
   readonly onRemove: (index: number) => void
   readonly onReorder: (oldIndex: number, newIndex: number) => void
 }
@@ -34,11 +36,11 @@ function SortableFieldItem({
   field,
   onRemove,
 }: Readonly<{
-  field: FieldSchemaType & { key: string; id: string }
+  field: FieldSchemaType
   onRemove: () => void
 }>) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id: field.id,
+    id: toSnakeCase(field.label),
   })
 
   const style = {
@@ -64,7 +66,9 @@ function SortableFieldItem({
             {/*----------------------- Label & Key ------------------------*/}
             <div className='flex flex-col'>
               <span className='font-medium truncate'>{field.label}</span>
-              <span className='font-mono text-xs text-muted-foreground truncate'>{field.key}</span>
+              <span className='font-mono text-xs text-muted-foreground truncate'>
+                {toSnakeCase(field.label)}
+              </span>
             </div>
           </div>
 
@@ -93,7 +97,7 @@ function SortableFieldItem({
               size='icon'
               className='h-8 w-8 text-muted-foreground hover:text-destructive shrink-0'
               onClick={onRemove}
-              data-testid={`saved-remove-${field.key}`}
+              data-testid={`saved-remove-${toSnakeCase(field.label)}`}
             >
               <Trash2 className='size-4' />
             </Button>
@@ -117,9 +121,11 @@ export function SavedFieldsList({ fields, onRemove, onReorder }: SavedFieldsList
     const { active, over } = event
 
     if (active.id !== over?.id) {
-      const oldIndex = fields.findIndex((f) => f.id === active.id)
-      const newIndex = fields.findIndex((f) => f.id === over?.id)
-      onReorder(oldIndex, newIndex)
+      const oldIndex = fields.findIndex((f) => toSnakeCase(f.label) === String(active.id))
+      const newIndex = fields.findIndex((f) => toSnakeCase(f.label) === String(over?.id))
+      if (oldIndex > -1 && newIndex > -1) {
+        onReorder(oldIndex, newIndex)
+      }
     }
   }
 
@@ -140,11 +146,14 @@ export function SavedFieldsList({ fields, onRemove, onReorder }: SavedFieldsList
 
   return (
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-      <SortableContext items={fields} strategy={verticalListSortingStrategy}>
+      <SortableContext
+        items={fields.map((f) => toSnakeCase(f.label))}
+        strategy={verticalListSortingStrategy}
+      >
         <div className='flex flex-col'>
           {fields.map((field, index) => (
             <SortableFieldItem
-              key={field.id}
+              key={toSnakeCase(field.label)}
               field={field}
               onRemove={() => {
                 onRemove(index)

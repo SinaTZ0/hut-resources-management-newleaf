@@ -5,6 +5,7 @@ import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 
 import { type FieldSchemaType, FIELD_TYPES } from '@/lib/drizzle/schema'
+import { toSnakeCase } from '@/lib/utils/common-utils'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import {
@@ -18,18 +19,12 @@ import {
 import { Switch } from '@/components/ui/switch'
 
 interface FieldBuilderProps {
-  readonly onAdd: (field: FieldSchemaType & { key: string }) => void
+  readonly onAdd: (field: FieldSchemaType) => void
   readonly existingKeys: string[]
 }
 
 /*------------------------- Utility --------------------------*/
-function toSnakeCase(s: string) {
-  return s
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9\s]/g, '')
-    .replace(/\s+/g, '_')
-}
+// NOTE: using shared toSnakeCase from utils
 
 /*-------- Builder Schema (for form input without order - order is managed separately) --------*/
 const builderFormSchema = z.object({
@@ -68,7 +63,6 @@ export function FieldBuilder({ onAdd, existingKeys }: FieldBuilderProps) {
 
     onAdd({
       ...values,
-      key,
       order: existingKeys.length,
     })
     reset()

@@ -5,12 +5,14 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 
 import {
-  FIELD_TYPES,
   type FieldSchemaType,
   EntitySchema,
   type EntitySchemaType,
+  InsertEntitySchema,
+  fieldSchema,
 } from '@/lib/drizzle/schema'
 import { Form } from '@/components/ui/form'
+import { toSnakeCase } from '@/lib/utils/common-utils'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
@@ -19,23 +21,12 @@ import { FieldBuilder } from './field-builder'
 import { SavedFieldsList } from './saved-fields-list'
 
 /*---------------------- Parent Schema -----------------------*/
-const parentSchema = z.object({
-  name: z.string().min(1, 'Entity name is required'),
-  description: z.string().optional(),
-  fields: z.array(
-    z.object({
-      label: z.string(),
-      type: z.enum(FIELD_TYPES),
-      sortable: z.boolean(),
-      required: z.boolean(),
-      order: z.number(),
-      key: z.string(),
-      id: z.string(),
-    })
-  ),
+// Extend InsertEntitySchema to have fields as an array for the form
+const parentSchema = InsertEntitySchema.extend({
+  fields: z.array(fieldSchema),
 })
 
-type ParentFormValues = z.infer<typeof parentSchema>
+type ParentFormValues = z.input<typeof parentSchema>
 
 /*------------------------ Component -------------------------*/
 export default function CreateEntityForm() {
@@ -56,32 +47,52 @@ export default function CreateEntityForm() {
     append,
     remove,
     move,
+    update,
   } = useFieldArray({
     control,
     name: 'fields',
   })
 
   /*------------------------- Handlers -------------------------*/
-  const handleAddField = (field: FieldSchemaType & { key: string }) => {
+  const handleAddField = (field: FieldSchemaType) => {
     append({
       ...field,
-      id: `${field.key}-${String(Date.now())}`,
     })
   }
 
+  const handleRemoveField = (index: number) => {
+    remove(index)
+    // After removal, update order values
+    for (let i = 0; i < savedFields.length; i++) {
+      const f = savedFields[i]
+      update(i, { ...f, order: i })
+    }
+  }
+
   const handleReorder = (oldIndex: number, newIndex: number) => {
+    // First perform reordering using move
     move(oldIndex, newIndex)
+
+    // Build a local array reflecting the new order and update order fields
+    const current = [...savedFields]
+    const moved = current.splice(oldIndex, 1)[0]
+    current.splice(newIndex, 0, moved)
+    for (let i = 0; i < current.length; i++) {
+      const f = current[i]
+      update(i, { ...f, order: i })
+    }
   }
 
   const onParentSubmit = (data: ParentFormValues) => {
     /*---------------- Transform to depth1Schema -----------------*/
-    const depth1Schema: Record<string, FieldSchemaType> = {}
+    const fields: Record<string, FieldSchemaType> = {}
     data.fields.forEach((f, idx) => {
-      depth1Schema[f.key] = {
+      const key: string = toSnakeCase(f.label)
+      fields[key] = {
         label: f.label,
         type: f.type,
-        sortable: f.sortable,
-        required: f.required,
+        sortable: f.sortable ?? true,
+        required: f.required ?? false,
         order: idx, // Use the current index as the order
       }
     })
@@ -89,7 +100,7 @@ export default function CreateEntityForm() {
     const payload: EntitySchemaType = {
       name: data.name,
       description: data.description || undefined,
-      depth1Schema,
+      fields,
     }
 
     const result = EntitySchema.safeParse(payload)
@@ -148,7 +159,10 @@ export default function CreateEntityForm() {
           </p>
           <Card className='border-primary/20 shadow-md border-dashed border-4'>
             <CardContent className=''>
-              <FieldBuilder onAdd={handleAddField} existingKeys={savedFields.map((f) => f.key)} />
+              <FieldBuilder
+                onAdd={handleAddField}
+                existingKeys={savedFields.map((f) => toSnakeCase(f.label))}
+              />
             </CardContent>
           </Card>
         </div>
@@ -164,7 +178,15 @@ export default function CreateEntityForm() {
             </div>
           </CardHeader>
           <CardContent>
-            <SavedFieldsList fields={savedFields} onRemove={remove} onReorder={handleReorder} />
+            <SavedFieldsList
+              fields={savedFields.map((f) => ({
+                ...f,
+                sortable: f.sortable ?? true,
+                required: f.required ?? false,
+              }))}
+              onRemove={handleRemoveField}
+              onReorder={handleReorder}
+            />
           </CardContent>
         </Card>
       </form>

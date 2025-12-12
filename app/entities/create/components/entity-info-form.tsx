@@ -9,15 +9,13 @@ import { Textarea } from '@/components/ui/textarea'
 
 type InfoFormValues = {
   name: string
-  description?: string
+  description?: string | null
   fields: Array<{
     label: string
     type: (typeof FIELD_TYPES)[number]
-    sortable: boolean
-    required: boolean
+    sortable?: boolean
+    required?: boolean
     order: number
-    key: string
-    id: string
   }>
 }
 
@@ -62,6 +60,7 @@ export function EntityInfoForm({ form }: EntityInfoFormProps) {
                 id='entity-desc'
                 placeholder='Optional description'
                 {...field}
+                value={field.value ?? ''}
                 data-testid='entity-desc'
               />
             </FormControl>
