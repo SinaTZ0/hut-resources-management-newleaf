@@ -147,6 +147,10 @@ export default defineConfig([
           caughtErrorsIgnorePattern: '^_',
         },
       ],
+      'no-warning-comments': [
+        'error',
+        { terms: ['eslint-disable', 'eslint-disable-next-line'], location: 'anywhere' },
+      ],
       // Import rules
       'import/no-cycle': 'error',
 
