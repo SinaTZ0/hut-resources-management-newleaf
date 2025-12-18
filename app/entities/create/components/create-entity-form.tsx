@@ -62,9 +62,11 @@ export default function CreateEntityForm() {
 
   const handleRemoveField = (index: number) => {
     remove(index)
-    // After removal, update order values
-    for (let i = 0; i < savedFields.length; i++) {
-      const f = savedFields[i]
+    // After removal, read the latest fields snapshot from the form and update order values
+    const current = parentForm.getValues('fields') as FieldSchemaType[] | undefined
+    if (!current) return
+    for (let i = 0; i < current.length; i++) {
+      const f = current[i]
       update(i, { ...f, order: i })
     }
   }
@@ -73,10 +75,9 @@ export default function CreateEntityForm() {
     // First perform reordering using move
     move(oldIndex, newIndex)
 
-    // Build a local array reflecting the new order and update order fields
-    const current = [...savedFields]
-    const moved = current.splice(oldIndex, 1)[0]
-    current.splice(newIndex, 0, moved)
+    // Read the latest fields snapshot from the form and update order fields
+    const current = parentForm.getValues('fields') as FieldSchemaType[] | undefined
+    if (!current) return
     for (let i = 0; i < current.length; i++) {
       const f = current[i]
       update(i, { ...f, order: i })
@@ -84,6 +85,7 @@ export default function CreateEntityForm() {
   }
 
   const onParentSubmit = (data: ParentFormValues) => {
+    console.log('TEST XXXXXXXXXXXXXXXXXXXXXXXXXX Test')
     /*---------------- Transform to depth1Schema -----------------*/
     const fields: Record<string, FieldSchemaType> = {}
     data.fields.forEach((f, idx) => {
