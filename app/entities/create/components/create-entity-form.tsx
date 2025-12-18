@@ -85,7 +85,6 @@ export default function CreateEntityForm() {
   }
 
   const onParentSubmit = (data: ParentFormValues) => {
-    console.log('TEST XXXXXXXXXXXXXXXXXXXXXXXXXX Test')
     /*---------------- Transform to depth1Schema -----------------*/
     const fields: Record<string, FieldSchemaType> = {}
     data.fields.forEach((f, idx) => {
