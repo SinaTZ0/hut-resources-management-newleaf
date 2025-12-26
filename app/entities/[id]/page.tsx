@@ -1,15 +1,18 @@
+'use server'
+
 import { notFound } from 'next/navigation'
 
-import { EntityForm } from './components/entity-form'
 import { getEntityById } from '@/app/entities/queries/get-entity-by-id'
 
+import { EntityDetails } from './entity-details'
+
 /*------------------------ Props Type ------------------------*/
-type EditEntityPageProps = Readonly<{
+type EntityDetailsPageProps = Readonly<{
   params: Promise<{ id: string }>
 }>
 
 /*--------------------------- Page ---------------------------*/
-export default async function EditEntityPage({ params }: EditEntityPageProps) {
+export default async function EntityDetailsPage({ params }: EntityDetailsPageProps) {
   const { id } = await params
 
   /*----------------------- Fetch Entity -----------------------*/
@@ -21,8 +24,8 @@ export default async function EditEntityPage({ params }: EditEntityPageProps) {
 
   /*-------------------------- Render --------------------------*/
   return (
-    <main className='py-6'>
-      <EntityForm mode='edit' initialData={result.data} />
+    <main className='container py-6 m-auto'>
+      <EntityDetails entity={result.data} />
     </main>
   )
 }

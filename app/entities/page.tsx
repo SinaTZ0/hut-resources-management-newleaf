@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 
 import { getEntities } from './queries/get-entities'
-import { EntitiesTable } from './components/entities-table'
+import { EntitiesTable } from './entities-table'
 
 /*------------------------- Helpers --------------------------*/
 function getEntityCountText(count: number): string {

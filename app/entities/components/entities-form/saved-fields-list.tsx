@@ -16,13 +16,12 @@ import {
   useSortable,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
+import { GripVertical, Trash2 } from 'lucide-react'
 
 import { type FieldSchemaType } from '@/lib/drizzle/schema'
-
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
-import { GripVertical, Trash2 } from 'lucide-react'
 import { toSnakeCase } from '@/lib/utils/common-utils'
 
 interface SavedFieldsListProps {

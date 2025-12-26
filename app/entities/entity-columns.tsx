@@ -15,7 +15,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Badge } from '@/components/ui/badge'
-
 import type { SelectEntitySchemaType } from '@/lib/drizzle/schema'
 
 /*------------------------- Helpers --------------------------*/
@@ -124,10 +123,10 @@ const actionsColumn: ColumnDef<SelectEntitySchemaType> = {
             Copy entity ID
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem asChild>
+          <DropdownMenuItem asChild data-testid='entity-view-details'>
             <Link href={`/entities/${entity.id}`}>View details</Link>
           </DropdownMenuItem>
-          <DropdownMenuItem asChild>
+          <DropdownMenuItem asChild data-testid='entity-edit'>
             <Link href={`/entities/${entity.id}/edit`}>Edit entity</Link>
           </DropdownMenuItem>
           <DropdownMenuSeparator />

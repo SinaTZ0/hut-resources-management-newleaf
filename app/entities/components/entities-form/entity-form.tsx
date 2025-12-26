@@ -21,12 +21,12 @@ import { toSnakeCase, cn } from '@/lib/utils/common-utils'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
-
-import { FieldBuilder } from '@/app/entities/(features)/(create-entities)/create/components/field-builder'
-import { SavedFieldsList } from '@/app/entities/(features)/(create-entities)/create/components/saved-fields-list'
 import { createEntity, type ActionResult } from '@/app/entities/actions/create-entity'
 import { updateEntity } from '@/app/entities/actions/update-entity'
-import { EntityInfoForm } from '@/app/entities/(features)/(create-entities)/create/components/entity-info-form'
+
+import { SavedFieldsList } from './saved-fields-list'
+import { FieldBuilder } from './field-builder'
+import { EntityInfoForm } from './entity-info-form'
 
 /*---------------------- Parent Schema -----------------------*/
 const parentSchema = InsertEntitySchema.extend({
@@ -42,7 +42,7 @@ type EntityFormProps = {
 }
 
 /*------------------------ Component -------------------------*/
-export function EntityForm({ mode, initialData }: EntityFormProps) {
+export function CreatAndUpdateEntityForm({ mode, initialData }: EntityFormProps) {
   /*-------------------------- State ---------------------------*/
   const [isPending, startTransition] = useTransition()
   const router = useRouter()
@@ -130,6 +130,17 @@ export function EntityForm({ mode, initialData }: EntityFormProps) {
   }))
   const fieldsError = parentForm.formState.errors.fields?.message
 
+  /*---------------------- Theme Classes -----------------------*/
+  const themeClasses = isEditMode
+    ? {
+        button: 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20',
+        card: 'border-emerald-500/20 bg-emerald-500/3',
+      }
+    : {
+        button: 'shadow-primary/20',
+        card: '',
+      }
+
   /*-------------------------- Submit --------------------------*/
   const onParentSubmit = (data: ParentFormValues) => {
     /*---------------- Transform to depth1Schema -----------------*/
@@ -201,7 +212,13 @@ export function EntityForm({ mode, initialData }: EntityFormProps) {
       className='flex flex-col max-w-6xl w-full m-auto gap-8 px-4 sm:px-6'
     >
       {/*-------------------------- Header --------------------------*/}
-      <div className='flex flex-row items-center justify-between'>
+      <div className='flex items-start gap-4'>
+        <Button variant='ghost' size='icon' asChild data-testid='back-to-entities'>
+          <Link href='/entities'>
+            <ArrowLeft className='size-6' />
+            <span className='sr-only'>Back to entities</span>
+          </Link>
+        </Button>
         <div className='flex flex-col gap-2'>
           <h1 className='text-3xl font-bold tracking-tight'>
             {isEditMode ? 'Edit Entity' : 'Create New Entity'}
@@ -212,12 +229,6 @@ export function EntityForm({ mode, initialData }: EntityFormProps) {
               : 'Define the structure and properties of a new resource type in your system.'}
           </p>
         </div>
-        <Button asChild data-testid='back-to-entities' variant='secondary'>
-          <Link href='/entities'>
-            <ArrowLeft className='mr-2 h-4 w-4' />
-            Back
-          </Link>
-        </Button>
       </div>
 
       <div className='flex flex-col md:flex-row gap-8'>
@@ -225,22 +236,8 @@ export function EntityForm({ mode, initialData }: EntityFormProps) {
         <div className='flex-1 flex flex-col md:w-7/12 gap-8'>
           {/*----------------------- Entity Info ------------------------*/}
           <div className='flex flex-col gap-4'>
-            <div className='flex items-center justify-between'>
-              <h2 className='text-xl font-semibold'>1. Entity Details</h2>
-              {/*---------------------- Submit Button -----------------------*/}
-              <div className='flex justify-end'>
-                <Button
-                  type='submit'
-                  size='lg'
-                  disabled={isPending}
-                  data-testid='save-entity'
-                  className='w-full md:w-auto shadow-lg shadow-primary/20'
-                >
-                  {isPending && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
-                  {getButtonText()}
-                </Button>
-              </div>
-            </div>
+            <h2 className='text-xl font-semibold'>1. Entity Details</h2>
+
             <Separator />
             <EntityInfoForm form={parentForm} />
           </div>
@@ -254,7 +251,7 @@ export function EntityForm({ mode, initialData }: EntityFormProps) {
             <Card
               className={cn(
                 'shadow-md border-dashed border-4',
-                fieldsError ? 'border-destructive' : 'border-primary/20'
+                fieldsError ? 'border-destructive' : themeClasses.card
               )}
             >
               <CardContent>
@@ -272,27 +269,50 @@ export function EntityForm({ mode, initialData }: EntityFormProps) {
         {/*------------- Right Column — Saved Fields List -------------*/}
         <div className='flex-1 md:w-5/12'>
           {/*-------------------- Saved Fields List ---------------------*/}
-          <Card>
-            <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-              <div className='flex flex-col space-y-1.5'>
-                <CardTitle>Entity Fields</CardTitle>
-                <CardDescription>Add fields using the builder on the top.</CardDescription>
-              </div>
-              <div className='text-sm text-muted-foreground bg-muted px-2 py-1 rounded-md'>
-                {savedFields.length} Fields Configured
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className='max-h-[40vh] md:max-h-[60vh] overflow-auto'>
-                <SavedFieldsList
-                  fields={normalizedFields}
-                  onRemove={handleRemoveField}
-                  onReorder={handleReorder}
-                />
-              </div>
-            </CardContent>
-          </Card>
+          {/*----------------------- Entity Info ------------------------*/}
+          <div className='flex flex-col gap-4'>
+            <h2 className='text-xl font-semibold'>3. Saved Fields</h2>
+            <Separator />
+            <Card className={themeClasses.card}>
+              <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
+                <div className='flex flex-col space-y-1.5'>
+                  <CardTitle>Entity Fields</CardTitle>
+                  <CardDescription>Add fields using the builder on the top.</CardDescription>
+                </div>
+                <div className='text-sm text-muted-foreground bg-muted px-2 py-1 rounded-md'>
+                  {savedFields.length} Fields Configured
+                </div>
+              </CardHeader>
+              <CardContent>
+                {/* 51.5vh is magic number so it match le Left Column height */}
+                <div className='max-h-[40vh] md:max-h-[51.5vh] overflow-auto'>
+                  <SavedFieldsList
+                    fields={normalizedFields}
+                    onRemove={handleRemoveField}
+                    onReorder={handleReorder}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
+      </div>
+
+      {/*---------------------- Submit Button -----------------------*/}
+      <div className='flex justify-end mt-4 mb-12'>
+        <Button
+          type='submit'
+          size='lg'
+          disabled={isPending}
+          data-testid='save-entity'
+          className={cn(
+            'w-full md:w-[200px] h-[52px] shadow-lg text-base font-semibold transition-all duration-200 active:scale-95',
+            themeClasses.button
+          )}
+        >
+          {isPending && <Loader2 className='mr-2 h-5 w-5 animate-spin' />}
+          {getButtonText()}
+        </Button>
       </div>
     </form>
   )

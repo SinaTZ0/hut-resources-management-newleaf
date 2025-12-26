@@ -1,8 +1,9 @@
 'use client'
 
 import { DataTable } from '@/components/tables/data-table'
-import { entityColumns } from './entity-columns'
 import type { SelectEntitySchemaType } from '@/lib/drizzle/schema'
+
+import { entityColumns } from './entity-columns'
 
 /*-------------------------- Types ---------------------------*/
 type EntitiesTableProps = Readonly<{
