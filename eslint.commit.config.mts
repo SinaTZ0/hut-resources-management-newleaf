@@ -70,16 +70,16 @@ export default defineConfig([
         { terms: ['eslint-disable', 'eslint-disable-next-line'], location: 'anywhere' },
       ],
       // Import rules
-      // 'import/no-cycle': 'error',
+      'import/no-cycle': 'error',
 
       // Import organization
-      // 'import/order': [
-      //   'warn',
-      //   {
-      //     groups: ['builtin', 'external', 'internal', 'parent', 'sibling', 'index'],
-      //     'newlines-between': 'always',
-      //   },
-      // ],
+      'import/order': [
+        'warn',
+        {
+          groups: ['builtin', 'external', 'internal', 'parent', 'sibling', 'index'],
+          'newlines-between': 'always',
+        },
+      ],
 
       // Next.js specific
       'import/no-anonymous-default-export': 'warn',

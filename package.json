@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint --cache",
+    "lint:no-cache": "eslint",
     "lint:all": "eslint . --cache",
     "lint:fix": "eslint . --fix --cache",
     "type-check": "tsc --noEmit",
@@ -20,7 +21,7 @@
   "lint-staged": {
     "*.{js,jsx,ts,tsx,mjs,mts}": [
       "prettier --write",
-      "eslint --fix",
+      "eslint --fix --config eslint.commit.config.mts",
       "node utils/normalize-divider-comments.mjs"
     ],
     "*.{json,md,css}": [
