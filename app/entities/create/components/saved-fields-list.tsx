@@ -150,7 +150,7 @@ export function SavedFieldsList({ fields, onRemove, onReorder }: SavedFieldsList
         items={fields.map((f) => toSnakeCase(f.label))}
         strategy={verticalListSortingStrategy}
       >
-        <div className='flex flex-col'>
+        <div className='flex flex-col overflow-hidden'>
           {fields.map((field, index) => (
             <SortableFieldItem
               key={toSnakeCase(field.label)}

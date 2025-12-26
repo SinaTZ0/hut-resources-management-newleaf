@@ -187,4 +187,13 @@ export default defineConfig([
       'jsx-a11y/role-supports-aria-props': 'warn',
     },
   },
+
+  // Allow `useReactTable` in this file: it intentionally uses a non-memoizable API.
+  {
+    name: 'allow-use-react-table',
+    files: ['components/tables/data-table.tsx'],
+    rules: {
+      'react-hooks/incompatible-library': 'off',
+    },
+  },
 ])
