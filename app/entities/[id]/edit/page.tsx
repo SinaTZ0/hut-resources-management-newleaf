@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation'
 
 import { getEntityById } from '@/app/entities/queries/get-entity-by-id'
 
-import { CreatAndUpdateEntityForm } from '../../components/entities-form/entity-form'
+import { CreateAndUpdateEntityForm } from '../../components/entities-form/entity-form'
 
 /*------------------------ Props Type ------------------------*/
 type EditEntityPageProps = Readonly<{
@@ -23,7 +23,7 @@ export default async function EditEntityPage({ params }: EditEntityPageProps) {
   /*-------------------------- Render --------------------------*/
   return (
     <main className='py-6'>
-      <CreatAndUpdateEntityForm mode='edit' initialData={result.data} />
+      <CreateAndUpdateEntityForm mode='edit' initialData={result.data} />
     </main>
   )
 }

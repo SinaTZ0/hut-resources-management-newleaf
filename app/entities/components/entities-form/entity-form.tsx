@@ -42,7 +42,7 @@ type EntityFormProps = {
 }
 
 /*------------------------ Component -------------------------*/
-export function CreatAndUpdateEntityForm({ mode, initialData }: EntityFormProps) {
+export function CreateAndUpdateEntityForm({ mode, initialData }: EntityFormProps) {
   /*-------------------------- State ---------------------------*/
   const [isPending, startTransition] = useTransition()
   const router = useRouter()

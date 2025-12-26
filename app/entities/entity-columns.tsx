@@ -1,11 +1,22 @@
 'use client'
 
+import { useState } from 'react'
 import { type ColumnDef } from '@tanstack/react-table'
-import { ArrowUpDown, MoreHorizontal } from 'lucide-react'
+import { ArrowUpDown, MoreHorizontal, Loader2 } from 'lucide-react'
 import Link from 'next/link'
+import { toast } from 'sonner'
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
-import { Checkbox } from '@/components/ui/checkbox'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,32 +28,12 @@ import {
 import { Badge } from '@/components/ui/badge'
 import type { SelectEntitySchemaType } from '@/lib/drizzle/schema'
 
+import { deleteEntity } from './actions/delete-entity'
+
 /*------------------------- Helpers --------------------------*/
 function handleCopyId(id: string) {
   void navigator.clipboard.writeText(id)
-}
-
-/*---------------------- Select Column -----------------------*/
-const selectColumn: ColumnDef<SelectEntitySchemaType> = {
-  id: 'select',
-  header: ({ table }) => (
-    <Checkbox
-      checked={
-        table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && 'indeterminate')
-      }
-      onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-      aria-label='Select all'
-    />
-  ),
-  cell: ({ row }) => (
-    <Checkbox
-      checked={row.getIsSelected()}
-      onCheckedChange={(value) => row.toggleSelected(!!value)}
-      aria-label='Select row'
-    />
-  ),
-  enableSorting: false,
-  enableHiding: false,
+  toast.success('Entity ID copied to clipboard')
 }
 
 /*----------------------- Name Column ------------------------*/
@@ -98,18 +89,40 @@ const createdAtColumn: ColumnDef<SelectEntitySchemaType> = {
   ),
   cell: ({ row }) => {
     const date = row.getValue('createdAt')
-    return <div className='text-muted-foreground'>{(date as Date).toLocaleDateString()}</div>
+    if (!(date instanceof Date)) return <div className='text-muted-foreground'>—</div>
+    return <div className='text-muted-foreground'>{date.toLocaleDateString()}</div>
   },
 }
 
 /*---------------------- Actions Column ----------------------*/
-const actionsColumn: ColumnDef<SelectEntitySchemaType> = {
-  id: 'actions',
-  enableHiding: false,
-  cell: ({ row }) => {
-    const entity = row.original
+function EntityActionsCell({ entity }: Readonly<{ entity: SelectEntitySchemaType }>) {
+  /*-------------------------- State ---------------------------*/
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
 
-    return (
+  /*------------------------- Handlers -------------------------*/
+  async function handleDelete() {
+    setIsDeleting(true)
+
+    try {
+      const result = await deleteEntity(entity.id)
+
+      if (result.success) {
+        toast.success(`Entity "${entity.name}" deleted successfully`)
+        setIsDeleteDialogOpen(false)
+      } else {
+        toast.error(result.error)
+      }
+    } catch {
+      toast.error('An unexpected error occurred')
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
+  /*-------------------------- Render --------------------------*/
+  return (
+    <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant='ghost' className='h-8 w-8 p-0' data-testid='entity-actions-btn'>
@@ -132,19 +145,58 @@ const actionsColumn: ColumnDef<SelectEntitySchemaType> = {
           <DropdownMenuSeparator />
           <DropdownMenuItem
             className='text-destructive focus:text-destructive'
+            onClick={() => setIsDeleteDialogOpen(true)}
             data-testid='entity-delete-btn'
           >
             Delete entity
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-    )
-  },
+
+      {/*---------------- Delete Confirmation Dialog ----------------*/}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Entity</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete &quot;{entity.name}&quot;? This action cannot be
+              undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting} data-testid='entity-delete-cancel'>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => void handleDelete()}
+              disabled={isDeleting}
+              className='bg-destructive text-white hover:bg-destructive/90'
+              data-testid='entity-delete-confirm'
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                  Deleting...
+                </>
+              ) : (
+                'Delete'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  )
+}
+
+const actionsColumn: ColumnDef<SelectEntitySchemaType> = {
+  id: 'actions',
+  enableHiding: false,
+  cell: ({ row }) => <EntityActionsCell entity={row.original} />,
 }
 
 /*------------------------- Columns --------------------------*/
 export const entityColumns: ColumnDef<SelectEntitySchemaType>[] = [
-  selectColumn,
   nameColumn,
   descriptionColumn,
   fieldsColumn,
