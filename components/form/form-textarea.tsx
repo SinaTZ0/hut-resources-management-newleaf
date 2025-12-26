@@ -1,17 +1,10 @@
 'use client'
 
-import { FieldPath, FieldValues, UseFormReturn } from 'react-hook-form'
+import { Controller, type FieldPath, type FieldValues, type UseFormReturn } from 'react-hook-form'
 
 import { cn } from '@/lib/utils/common-utils'
 import { Textarea } from '@/components/ui/textarea'
-import {
-  FormField,
-  FormItem,
-  FormLabel,
-  FormControl,
-  FormDescription,
-  FormMessage,
-} from '@/components/ui/form'
+import { Field, FieldDescription, FieldError, FieldLabel } from '@/components/ui/field'
 
 type FormTextareaProps<
   TFieldValues extends FieldValues = FieldValues,
@@ -47,33 +40,33 @@ export function FormTextarea<
 }: FormTextareaProps<TFieldValues, TName>) {
   /*-------------------------- Render --------------------------*/
   return (
-    <FormField
-      control={form.control}
+    <Controller
       name={name}
-      render={({ field }) => (
-        <FormItem className={cn(className)}>
+      control={form.control}
+      render={({ field, fieldState }) => (
+        <Field className={cn(className)} data-invalid={fieldState.invalid} data-disabled={disabled}>
           {/*-------------------------- Label ---------------------------*/}
-          {label && <FormLabel>{label}</FormLabel>}
+          {label && <FieldLabel htmlFor={field.name}>{label}</FieldLabel>}
 
           {/*------------------------- Textarea -------------------------*/}
-          <FormControl>
-            <Textarea
-              placeholder={placeholder}
-              disabled={disabled}
-              rows={rows}
-              className={textareaClassName}
-              data-testid={testId}
-              {...field}
-              value={field.value ?? ''}
-            />
-          </FormControl>
+          <Textarea
+            {...field}
+            id={field.name}
+            aria-invalid={fieldState.invalid}
+            placeholder={placeholder}
+            disabled={disabled}
+            rows={rows}
+            className={textareaClassName}
+            data-testid={testId}
+            value={field.value ?? ''}
+          />
 
           {/*----------------------- Description ------------------------*/}
-          {description && <FormDescription>{description}</FormDescription>}
+          {description && <FieldDescription>{description}</FieldDescription>}
 
           {/*---------------------- Error Message -----------------------*/}
-          <FormMessage />
-        </FormItem>
+          {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+        </Field>
       )}
     />
   )

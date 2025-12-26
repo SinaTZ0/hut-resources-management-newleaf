@@ -1,17 +1,10 @@
 'use client'
 
-import { FieldPath, FieldValues, UseFormReturn } from 'react-hook-form'
+import { Controller, type FieldPath, type FieldValues, type UseFormReturn } from 'react-hook-form'
 
 import { cn } from '@/lib/utils/common-utils'
 import { Input } from '@/components/ui/input'
-import {
-  FormField,
-  FormItem,
-  FormLabel,
-  FormControl,
-  FormDescription,
-  FormMessage,
-} from '@/components/ui/form'
+import { Field, FieldDescription, FieldError, FieldLabel } from '@/components/ui/field'
 
 type FormInputProps<
   TFieldValues extends FieldValues = FieldValues,
@@ -49,34 +42,34 @@ export function FormInput<
 }: FormInputProps<TFieldValues, TName>) {
   /*-------------------------- Render --------------------------*/
   return (
-    <FormField
-      control={form.control}
+    <Controller
       name={name}
-      render={({ field }) => (
-        <FormItem className={cn(className)}>
+      control={form.control}
+      render={({ field, fieldState }) => (
+        <Field className={cn(className)} data-invalid={fieldState.invalid} data-disabled={disabled}>
           {/*-------------------------- Label ---------------------------*/}
-          {label && <FormLabel>{label}</FormLabel>}
+          {label && <FieldLabel htmlFor={field.name}>{label}</FieldLabel>}
 
           {/*-------------------------- Input ---------------------------*/}
-          <FormControl>
-            <Input
-              type={type}
-              placeholder={placeholder}
-              disabled={disabled}
-              className={inputClassName}
-              data-testid={testId}
-              onKeyDown={onKeyDown}
-              {...field}
-              value={field.value ?? ''}
-            />
-          </FormControl>
+          <Input
+            {...field}
+            id={field.name}
+            aria-invalid={fieldState.invalid}
+            type={type}
+            placeholder={placeholder}
+            disabled={disabled}
+            className={inputClassName}
+            data-testid={testId}
+            onKeyDown={onKeyDown}
+            value={field.value ?? ''}
+          />
 
           {/*----------------------- Description ------------------------*/}
-          {description && <FormDescription>{description}</FormDescription>}
+          {description && <FieldDescription>{description}</FieldDescription>}
 
           {/*---------------------- Error Message -----------------------*/}
-          <FormMessage />
-        </FormItem>
+          {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+        </Field>
       )}
     />
   )

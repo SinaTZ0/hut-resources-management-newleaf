@@ -1,16 +1,9 @@
 'use client'
 
-import { FieldPath, FieldValues, UseFormReturn } from 'react-hook-form'
+import { Controller, type FieldPath, type FieldValues, type UseFormReturn } from 'react-hook-form'
 
 import { cn } from '@/lib/utils/common-utils'
-import {
-  FormField,
-  FormItem,
-  FormLabel,
-  FormControl,
-  FormDescription,
-  FormMessage,
-} from '@/components/ui/form'
+import { Field, FieldDescription, FieldError, FieldLabel } from '@/components/ui/field'
 import {
   Select,
   SelectTrigger,
@@ -64,21 +57,29 @@ export function FormSelect<
 
   /*-------------------------- Render --------------------------*/
   return (
-    <FormField
-      control={form.control}
+    <Controller
       name={name}
-      render={({ field }) => (
-        <FormItem className={cn(className)}>
+      control={form.control}
+      render={({ field, fieldState }) => (
+        <Field className={cn(className)} data-invalid={fieldState.invalid} data-disabled={disabled}>
           {/*-------------------------- Label ---------------------------*/}
-          {label && <FormLabel>{label}</FormLabel>}
+          {label && <FieldLabel htmlFor={field.name}>{label}</FieldLabel>}
 
           {/*-------------------------- Select --------------------------*/}
-          <Select value={field.value} onValueChange={field.onChange} disabled={disabled}>
-            <FormControl>
-              <SelectTrigger className={triggerClassName} data-testid={testId}>
-                <SelectValue placeholder={placeholder} />
-              </SelectTrigger>
-            </FormControl>
+          <Select
+            name={field.name}
+            value={field.value}
+            onValueChange={field.onChange}
+            disabled={disabled}
+          >
+            <SelectTrigger
+              id={field.name}
+              aria-invalid={fieldState.invalid}
+              className={triggerClassName}
+              data-testid={testId}
+            >
+              <SelectValue placeholder={placeholder} />
+            </SelectTrigger>
             <SelectContent>
               <SelectGroup>
                 {normalizedOptions.map((opt) => (
@@ -91,11 +92,11 @@ export function FormSelect<
           </Select>
 
           {/*----------------------- Description ------------------------*/}
-          {description && <FormDescription>{description}</FormDescription>}
+          {description && <FieldDescription>{description}</FieldDescription>}
 
           {/*---------------------- Error Message -----------------------*/}
-          <FormMessage />
-        </FormItem>
+          {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+        </Field>
       )}
     />
   )

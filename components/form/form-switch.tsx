@@ -1,17 +1,16 @@
 'use client'
 
-import { FieldPath, FieldValues, UseFormReturn } from 'react-hook-form'
+import { Controller, type FieldPath, type FieldValues, type UseFormReturn } from 'react-hook-form'
 
 import { cn } from '@/lib/utils/common-utils'
 import { Switch } from '@/components/ui/switch'
 import {
-  FormField,
-  FormItem,
-  FormLabel,
-  FormControl,
-  FormDescription,
-  FormMessage,
-} from '@/components/ui/form'
+  Field,
+  FieldContent,
+  FieldDescription,
+  FieldError,
+  FieldLabel,
+} from '@/components/ui/field'
 
 type FormSwitchProps<
   TFieldValues extends FieldValues = FieldValues,
@@ -41,31 +40,39 @@ export function FormSwitch<
 }: FormSwitchProps<TFieldValues, TName>) {
   /*-------------------------- Render --------------------------*/
   return (
-    <FormField
-      control={form.control}
+    <Controller
       name={name}
-      render={({ field }) => (
-        <FormItem className={cn('flex flex-row items-center justify-between gap-2', className)}>
+      control={form.control}
+      render={({ field, fieldState }) => (
+        <Field
+          orientation='horizontal'
+          className={cn(className)}
+          data-invalid={fieldState.invalid}
+          data-disabled={disabled}
+        >
           {/*------------------- Label & Description --------------------*/}
-          <div className='space-y-0.5'>
-            {label && <FormLabel className='font-normal'>{label}</FormLabel>}
-            {description && <FormDescription>{description}</FormDescription>}
-          </div>
+          <FieldContent>
+            {label && (
+              <FieldLabel htmlFor={field.name} className='font-normal'>
+                {label}
+              </FieldLabel>
+            )}
+            {description && <FieldDescription>{description}</FieldDescription>}
+            {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+          </FieldContent>
 
           {/*-------------------------- Switch --------------------------*/}
-          <FormControl>
-            <Switch
-              checked={field.value}
-              onCheckedChange={field.onChange}
-              disabled={disabled}
-              data-testid={testId}
-              aria-label={label}
-            />
-          </FormControl>
-
-          {/*---------------------- Error Message -----------------------*/}
-          <FormMessage />
-        </FormItem>
+          <Switch
+            id={field.name}
+            name={field.name}
+            checked={field.value}
+            onCheckedChange={field.onChange}
+            disabled={disabled}
+            data-testid={testId}
+            aria-invalid={fieldState.invalid}
+            aria-label={label}
+          />
+        </Field>
       )}
     />
   )

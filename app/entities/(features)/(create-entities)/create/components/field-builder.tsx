@@ -7,7 +7,6 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { type FieldSchemaType, FIELD_TYPES } from '@/lib/drizzle/schema'
 import { toSnakeCase } from '@/lib/utils/common-utils'
 import { Button } from '@/components/ui/button'
-import { Form } from '@/components/ui/form'
 import { FormInput } from '@/components/form/form-input'
 import { FormSelect } from '@/components/form/form-select'
 import { FormSwitch } from '@/components/form/form-switch'
@@ -61,53 +60,51 @@ export function FieldBuilder({ onAdd, existingKeys }: FieldBuilderProps) {
 
   /*-------------------------- Render --------------------------*/
   return (
-    <Form {...form}>
-      <div className='flex flex-col gap-4'>
-        {/*----------------------- Label Input ------------------------*/}
-        <FormInput
-          form={form}
-          name='label'
-          label='Label'
-          placeholder='e.g., Name, Age, Email'
-          description='Used to generate the human label & snake_case key.'
-          testId='builder-label'
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              e.preventDefault()
-              void handleSubmit(onSubmit)()
-            }
-          }}
-        />
+    <div className='flex flex-col gap-4'>
+      {/*----------------------- Label Input ------------------------*/}
+      <FormInput
+        form={form}
+        name='label'
+        label='Label'
+        placeholder='e.g., Name, Age, Email'
+        description='Used to generate the human label & snake_case key.'
+        testId='builder-label'
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault()
+            void handleSubmit(onSubmit)()
+          }
+        }}
+      />
 
-        {/*----------------------- Type Select ------------------------*/}
-        <FormSelect
-          form={form}
-          name='type'
-          label='Type'
-          placeholder='Select type'
-          options={FIELD_TYPES}
-          testId='builder-type'
-        />
+      {/*----------------------- Type Select ------------------------*/}
+      <FormSelect
+        form={form}
+        name='type'
+        label='Type'
+        placeholder='Select type'
+        options={FIELD_TYPES}
+        testId='builder-type'
+      />
 
-        {/*--------------- Sortable & Required Switches ---------------*/}
-        <div className='flex items-center gap-4'>
-          <FormSwitch form={form} name='sortable' label='Sortable' testId='builder-sortable' />
+      {/*--------------- Sortable & Required Switches ---------------*/}
+      <div className='flex items-center gap-4'>
+        <FormSwitch form={form} name='sortable' label='Sortable' testId='builder-sortable' />
 
-          <FormSwitch form={form} name='required' label='Required' testId='builder-required' />
-        </div>
-
-        {/*------------------------ Add Button ------------------------*/}
-        <Button
-          className='w-full'
-          type='button'
-          variant='secondary'
-          data-testid='builder-add'
-          aria-label='Add field'
-          onClick={() => void handleSubmit(onSubmit)()}
-        >
-          Add +
-        </Button>
+        <FormSwitch form={form} name='required' label='Required' testId='builder-required' />
       </div>
-    </Form>
+
+      {/*------------------------ Add Button ------------------------*/}
+      <Button
+        className='w-full'
+        type='button'
+        variant='secondary'
+        data-testid='builder-add'
+        aria-label='Add field'
+        onClick={() => void handleSubmit(onSubmit)()}
+      >
+        Add +
+      </Button>
+    </div>
   )
 }
