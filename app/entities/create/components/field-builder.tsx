@@ -1,32 +1,23 @@
 'use client'
 
-import { z } from 'zod'
-import { Controller, useForm } from 'react-hook-form'
+import { z } from 'zod/v4'
+import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 
 import { type FieldSchemaType, FIELD_TYPES } from '@/lib/drizzle/schema'
 import { toSnakeCase } from '@/lib/utils/common-utils'
-import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import {
-  Select,
-  SelectTrigger,
-  SelectContent,
-  SelectItem,
-  SelectValue,
-  SelectGroup,
-} from '@/components/ui/select'
-import { Switch } from '@/components/ui/switch'
+import { Form } from '@/components/ui/form'
+import { FormInput } from '@/components/form/form-input'
+import { FormSelect } from '@/components/form/form-select'
+import { FormSwitch } from '@/components/form/form-switch'
 
-interface FieldBuilderProps {
+type FieldBuilderProps = {
   readonly onAdd: (field: FieldSchemaType) => void
   readonly existingKeys: string[]
 }
 
-/*------------------------- Utility --------------------------*/
-// NOTE: using shared toSnakeCase from utils
-
-/*-------- Builder Schema (for form input without order - order is managed separately) --------*/
+/*---------------------- Builder Schema ----------------------*/
 const builderFormSchema = z.object({
   label: z.string().min(1, 'Label is required'),
   type: z.enum(FIELD_TYPES),
@@ -49,7 +40,7 @@ export function FieldBuilder({ onAdd, existingKeys }: FieldBuilderProps) {
     },
   })
 
-  const { control, register, handleSubmit, reset } = form
+  const { handleSubmit, reset } = form
 
   /*------------------------- Handlers -------------------------*/
   const onSubmit = (values: BuilderFormValues) => {
@@ -70,17 +61,16 @@ export function FieldBuilder({ onAdd, existingKeys }: FieldBuilderProps) {
 
   /*-------------------------- Render --------------------------*/
   return (
-    <div role='group' aria-labelledby='builder-heading' className='flex flex-col gap-4'>
-      {/*----------------------- Label Input ------------------------*/}
-      <div>
-        <label htmlFor='builder-label' className='mb-1 block text-sm font-medium'>
-          Label
-        </label>
-        <Input
-          id='builder-label'
-          data-testid='builder-label'
+    <Form {...form}>
+      <div className='flex flex-col gap-4'>
+        {/*----------------------- Label Input ------------------------*/}
+        <FormInput
+          form={form}
+          name='label'
+          label='Label'
           placeholder='e.g., Name, Age, Email'
-          {...register('label')}
+          description='Used to generate the human label & snake_case key.'
+          testId='builder-label'
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
               e.preventDefault()
@@ -88,90 +78,36 @@ export function FieldBuilder({ onAdd, existingKeys }: FieldBuilderProps) {
             }
           }}
         />
-        <p className='text-muted-foreground text-sm mt-1'>
-          Used to generate the human label & snake_case key.
-        </p>
-      </div>
 
-      {/*----------------------- Type Select ------------------------*/}
-      <div>
-        <label htmlFor='builder-type' className='mb-1 block text-sm font-medium'>
-          Type
-        </label>
-        <Controller
-          control={control}
+        {/*----------------------- Type Select ------------------------*/}
+        <FormSelect
+          form={form}
           name='type'
-          render={({ field }) => (
-            <Select value={field.value} onValueChange={field.onChange}>
-              <SelectTrigger id='builder-type'>
-                <SelectValue placeholder='Select type' />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectGroup>
-                  {FIELD_TYPES.map((t) => (
-                    <SelectItem value={t} key={t}>
-                      {t}
-                    </SelectItem>
-                  ))}
-                </SelectGroup>
-              </SelectContent>
-            </Select>
-          )}
+          label='Type'
+          placeholder='Select type'
+          options={FIELD_TYPES}
+          testId='builder-type'
         />
+
+        {/*--------------- Sortable & Required Switches ---------------*/}
+        <div className='flex items-center gap-4'>
+          <FormSwitch form={form} name='sortable' label='Sortable' testId='builder-sortable' />
+
+          <FormSwitch form={form} name='required' label='Required' testId='builder-required' />
+        </div>
+
+        {/*------------------------ Add Button ------------------------*/}
+        <Button
+          className='w-full'
+          type='button'
+          variant='secondary'
+          data-testid='builder-add'
+          aria-label='Add field'
+          onClick={() => void handleSubmit(onSubmit)()}
+        >
+          Add +
+        </Button>
       </div>
-
-      {/*--------------- Sortable & Required Switches ---------------*/}
-      <div className='flex items-center gap-4'>
-        <label htmlFor='builder-sortable' className='flex items-center gap-2'>
-          <Controller
-            control={control}
-            name='sortable'
-            render={({ field }) => (
-              <>
-                <Switch
-                  id='builder-sortable'
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                  data-testid='builder-sortable'
-                  aria-label='sortable'
-                />
-                <span className='text-sm'>Sortable</span>
-              </>
-            )}
-          />
-        </label>
-
-        <label htmlFor='builder-required' className='flex items-center gap-2'>
-          <Controller
-            control={control}
-            name='required'
-            render={({ field }) => (
-              <>
-                <Switch
-                  id='builder-required'
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                  data-testid='builder-required'
-                  aria-label='required'
-                />
-                <span className='text-sm'>Required</span>
-              </>
-            )}
-          />
-        </label>
-      </div>
-
-      {/*------------------------ Add Button ------------------------*/}
-      <Button
-        className='w-full'
-        type='button'
-        variant={'secondary'}
-        data-testid='builder-add'
-        aria-label='Add field'
-        onClick={() => void handleSubmit(onSubmit)()}
-      >
-        Add +
-      </Button>
-    </div>
+    </Form>
   )
 }
