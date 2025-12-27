@@ -10,7 +10,7 @@ import { ArrowLeft, Loader2 } from 'lucide-react'
 import Link from 'next/link'
 
 import {
-  type FieldSchemaType,
+  type FieldSchema,
   EntitySchema,
   type EntitySchemaType,
   InsertEntitySchema,
@@ -88,7 +88,7 @@ export function CreateAndUpdateEntityForm({ mode, initialData }: EntityFormProps
   })
 
   /*------------------------- Handlers -------------------------*/
-  const handleAddField = (field: FieldSchemaType) => {
+  const handleAddField = (field: FieldSchema) => {
     append({
       ...field,
     })
@@ -96,7 +96,7 @@ export function CreateAndUpdateEntityForm({ mode, initialData }: EntityFormProps
 
   const handleRemoveField = (index: number) => {
     remove(index)
-    const current = parentForm.getValues('fields') as FieldSchemaType[] | undefined
+    const current = parentForm.getValues('fields') as FieldSchema[] | undefined
     if (!current) return
     for (let i = 0; i < current.length; i++) {
       const f = current[i]
@@ -107,7 +107,7 @@ export function CreateAndUpdateEntityForm({ mode, initialData }: EntityFormProps
   const handleReorder = (oldIndex: number, newIndex: number) => {
     move(oldIndex, newIndex)
 
-    const current = parentForm.getValues('fields') as FieldSchemaType[] | undefined
+    const current = parentForm.getValues('fields') as FieldSchema[] | undefined
     if (!current) return
     for (let i = 0; i < current.length; i++) {
       const f = current[i]
@@ -143,8 +143,8 @@ export function CreateAndUpdateEntityForm({ mode, initialData }: EntityFormProps
 
   /*-------------------------- Submit --------------------------*/
   const onParentSubmit = (data: ParentFormValues) => {
-    /*---------------- Transform to depth1Schema -----------------*/
-    const fields: Record<string, FieldSchemaType> = {}
+    /*------------ Transform to Fields(Depth1) Schema ------------*/
+    const fields: Record<string, FieldSchema> = {}
     data.fields.forEach((f, idx) => {
       const key: string = toSnakeCase(f.label)
       fields[key] = {

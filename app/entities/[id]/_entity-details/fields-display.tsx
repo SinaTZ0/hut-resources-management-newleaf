@@ -9,11 +9,11 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import type { Depth1Schema, FieldType } from '@/lib/drizzle/schema'
+import type { FieldsSchema, FieldType } from '@/lib/drizzle/schema'
 
 /*------------------------ Props Type ------------------------*/
 type FieldsDisplayProps = Readonly<{
-  fields: Depth1Schema
+  fields: FieldsSchema
 }>
 
 /*-------------------- Type Badge Config ---------------------*/

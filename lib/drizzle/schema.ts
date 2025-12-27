@@ -15,19 +15,21 @@ export const fieldSchema = z.strictObject({
   order: z.number().int().min(0, { message: 'Order must be a non-negative integer' }),
 })
 
-export type FieldSchemaType = z.infer<typeof fieldSchema>
+export type FieldSchema = z.infer<typeof fieldSchema>
 
-/*----------------------- Depth 1 Type -----------------------*/
-export const depth1Schema = z.record(z.string(), fieldSchema)
+/*----------------------- Fields Type ------------------------*/
+//former depth1Schema. chaged to fieldsSchema to better reflect its purpose
+export const fieldsSchema = z.record(z.string(), fieldSchema)
 
-export type Depth1Schema = z.infer<typeof depth1Schema>
+export type FieldsSchema = z.infer<typeof fieldsSchema>
 
 /*---------------------- Entities Table ----------------------*/
 export const entitiesTable = pgTable('entities', {
   id: uuid('id').defaultRandom().primaryKey(),
   name: text('name').notNull().unique(),
   description: text('description'),
-  fields: jsonb('depth1_schema').notNull().$type<Depth1Schema>(),
+  //former depth1_schema column. chaged to fields to better reflect its purpose
+  fields: jsonb('fields').notNull().$type<FieldsSchema>(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 })
@@ -40,7 +42,7 @@ export const EntitySchema = z.strictObject({
   id: z.uuid().optional(),
   name: z.string().min(1, { message: 'Entity name is required' }),
   description: z.string().nullable().optional(),
-  fields: depth1Schema.refine((obj) => Object.keys(obj).length > 0, {
+  fields: fieldsSchema.refine((obj) => Object.keys(obj).length > 0, {
     message: 'fields must have at least one field',
   }),
   createdAt: z.date().optional(),
