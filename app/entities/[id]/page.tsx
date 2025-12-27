@@ -4,7 +4,7 @@ import { notFound } from 'next/navigation'
 
 import { getEntityById } from '@/app/entities/queries/get-entity-by-id'
 
-import { EntityDetails } from './entity-details'
+import { EntityDetails } from './_entity-details/entity-details'
 
 /*------------------------ Props Type ------------------------*/
 type EntityDetailsPageProps = Readonly<{

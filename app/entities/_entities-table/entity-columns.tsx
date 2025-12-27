@@ -27,8 +27,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Badge } from '@/components/ui/badge'
 import type { SelectEntitySchemaType } from '@/lib/drizzle/schema'
-
-import { deleteEntity } from './actions/delete-entity'
+import { deleteEntity } from '@/app/entities/actions/delete-entity'
 
 /*------------------------- Helpers --------------------------*/
 function handleCopyId(id: string) {
