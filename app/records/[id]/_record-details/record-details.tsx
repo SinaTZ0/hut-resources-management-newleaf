@@ -7,8 +7,8 @@ import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
 import type { RecordWithEntityDetails } from '@/app/records/queries/get-record-by-id'
 
-import { Depth1Display } from './depth1-display'
-import { Depth2Display } from './depth2-display'
+import { FieldValuesDisplay } from './field-values-display'
+import { MetadataDisplay } from './metadata-display'
 import { CopyIdButton } from './copy-id-button'
 
 /*------------------------ Props Type ------------------------*/
@@ -20,10 +20,10 @@ type RecordDetailsProps = Readonly<{
 export function RecordDetails({ record }: RecordDetailsProps) {
   /*--------------------- Computed Values ----------------------*/
   const fieldCount = Object.keys(record.entityFields).length
-  const hasDepth2 =
-    record.depth2Values !== null &&
-    typeof record.depth2Values === 'object' &&
-    Object.keys(record.depth2Values).length > 0
+  const hasMetadata =
+    record.metadata !== null &&
+    typeof record.metadata === 'object' &&
+    Object.keys(record.metadata).length > 0
 
   const createdDate = record.createdAt.toLocaleDateString('en-US', {
     year: 'numeric',
@@ -108,7 +108,7 @@ export function RecordDetails({ record }: RecordDetailsProps) {
         </div>
       </div>
 
-      {/*------------------- Depth 1 Values Card --------------------*/}
+      {/*-------------------- Field Values Card ---------------------*/}
       <Card>
         <CardHeader className='pb-3'>
           <CardTitle className='text-lg'>Core Properties</CardTitle>
@@ -117,11 +117,11 @@ export function RecordDetails({ record }: RecordDetailsProps) {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Depth1Display fields={record.entityFields} values={record.depth1Values} />
+          <FieldValuesDisplay fields={record.entityFields} values={record.fieldValues} />
         </CardContent>
       </Card>
 
-      {/*------------------- Depth 2 Values Card --------------------*/}
+      {/*---------------------- Metadata Card -----------------------*/}
       <Card>
         <CardHeader className='pb-3'>
           <div className='flex items-center justify-between'>
@@ -129,15 +129,15 @@ export function RecordDetails({ record }: RecordDetailsProps) {
               <CardTitle className='text-lg'>Additional Details</CardTitle>
               <CardDescription>Free-form JSON data for extra information</CardDescription>
             </div>
-            {hasDepth2 && (
-              <Badge variant='secondary' data-testid='record-details-has-depth2'>
+            {hasMetadata && (
+              <Badge variant='secondary' data-testid='record-details-has-metadata'>
                 Has Data
               </Badge>
             )}
           </div>
         </CardHeader>
         <CardContent>
-          <Depth2Display values={record.depth2Values} />
+          <MetadataDisplay values={record.metadata} />
         </CardContent>
       </Card>
 

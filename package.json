@@ -16,7 +16,8 @@
     "format:check": "prettier --check",
     "format:all": "prettier --write \"**/*.{js,jsx,ts,tsx}\"",
     "test": "node test.mjs > test-output.js",
-    "prepare": "husky"
+    "prepare": "husky",
+    "knip": "knip"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx,mjs,mts}": [
@@ -107,6 +108,7 @@
     "globals": "^16.5.0",
     "husky": "^9.1.7",
     "jiti": "^2.6.1",
+    "knip": "^5.78.0",
     "lint-staged": "^16.2.7",
     "prettier": "^3.7.4",
     "tailwindcss": "^4",

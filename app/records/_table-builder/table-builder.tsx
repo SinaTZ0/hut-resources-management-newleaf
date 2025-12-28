@@ -31,8 +31,8 @@ type EntityOption = {
 type RecordData = {
   id: string
   entityId: string
-  depth1Values: Record<string, unknown>
-  depth2Values: Record<string, unknown> | null
+  fieldValues: Record<string, unknown>
+  metadata: Record<string, unknown> | null
   createdAt: Date
   updatedAt: Date
 }

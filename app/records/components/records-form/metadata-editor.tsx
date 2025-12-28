@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils/common-utils'
 import { Field, FieldDescription, FieldError, FieldLabel } from '@/components/ui/field'
 
 /*-------------------------- Types ---------------------------*/
-type Depth2EditorProps = {
+type MetadataEditorProps = {
   readonly value: string | null
   readonly onChange: (value: string | null) => void
   readonly disabled?: boolean
@@ -19,14 +19,14 @@ type Depth2EditorProps = {
 }
 
 /*------------------------ Component -------------------------*/
-export function Depth2Editor({
+export function MetadataEditor({
   value,
   onChange,
   disabled,
   error,
   className,
   testId,
-}: Depth2EditorProps) {
+}: MetadataEditorProps) {
   /*-------------------------- State ---------------------------*/
   const [isValid, setIsValid] = useState(true)
   const { resolvedTheme } = useTheme()

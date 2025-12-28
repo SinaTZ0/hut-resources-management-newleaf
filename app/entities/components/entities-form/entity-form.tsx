@@ -143,7 +143,7 @@ export function CreateAndUpdateEntityForm({ mode, initialData }: EntityFormProps
 
   /*-------------------------- Submit --------------------------*/
   const onParentSubmit = (data: ParentFormValues) => {
-    /*------------ Transform to Fields(Depth1) Schema ------------*/
+    /*---------------- Transform to Fields Schema ----------------*/
     const fields: Record<string, FieldSchema> = {}
     data.fields.forEach((f, idx) => {
       const key: string = toSnakeCase(f.label)

@@ -1,9 +1,10 @@
 'use server'
 
 import { eq, desc } from 'drizzle-orm'
+import type { Simplify } from 'type-fest'
 
 import { db } from '@/lib/drizzle/db'
-import { recordsTable, entitiesTable } from '@/lib/drizzle/schema'
+import { recordsTable, entitiesTable, type SelectRecordSchemaType } from '@/lib/drizzle/schema'
 import type { QueryResult } from '@/app/entities/queries/get-entities'
 
 /*-------------------------- Types ---------------------------*/
@@ -13,15 +14,11 @@ type GetRecordsOptions = {
   offset?: number
 }
 
-export type RecordWithEntity = {
-  id: string
-  entityId: string
-  entityName: string
-  depth1Values: Record<string, unknown>
-  depth2Values: Record<string, unknown> | null
-  createdAt: Date
-  updatedAt: Date
-}
+export type RecordWithEntity = Simplify<
+  SelectRecordSchemaType & {
+    entityName: string
+  }
+>
 
 /*----------------------- Get Records ------------------------*/
 export async function getRecords(
@@ -36,8 +33,8 @@ export async function getRecords(
         id: recordsTable.id,
         entityId: recordsTable.entityId,
         entityName: entitiesTable.name,
-        depth1Values: recordsTable.depth1Values,
-        depth2Values: recordsTable.depth2Values,
+        fieldValues: recordsTable.fieldValues,
+        metadata: recordsTable.metadata,
         createdAt: recordsTable.createdAt,
         updatedAt: recordsTable.updatedAt,
       })

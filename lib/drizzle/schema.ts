@@ -91,9 +91,9 @@ const _SelectAssignableCheck: IsEqual<_SelectAssignable, true> = true
 /*                            RECORDS                                  */
 /*=====================================================================*/
 
-/*------------------- Depth 1 Field Value --------------------*/
+/*----------------------- Field Value ------------------------*/
 // Single field value union (what a record stores per field)
-export const depth1FieldValueSchema = z.union([
+export const fieldValueSchema = z.union([
   z.string(),
   z.number(),
   z.boolean(),
@@ -101,20 +101,20 @@ export const depth1FieldValueSchema = z.union([
   z.null(),
 ])
 
-export type Depth1FieldValue = z.infer<typeof depth1FieldValueSchema>
+export type FieldValue = z.infer<typeof fieldValueSchema>
 
-/*---------------------- Depth 1 Values ----------------------*/
-// Dynamic values based on Entity's Depth1Schema
+/*----------------------- Field Values -----------------------*/
+// Dynamic values based on Entity fields
 // Keys must match the Entity's field keys
-export const depth1ValuesSchema = z.record(z.string(), depth1FieldValueSchema)
+export const fieldValuesSchema = z.record(z.string(), fieldValueSchema)
 
-export type Depth1Values = z.infer<typeof depth1ValuesSchema>
+export type FieldValues = z.infer<typeof fieldValuesSchema>
 
-/*---------------------- Depth 2 Values ----------------------*/
+/*------------------------- Metadata -------------------------*/
 // Free-form JSON for unstructured data
-export const depth2ValuesSchema = z.record(z.string(), z.unknown()).nullable()
+export const metadataSchema = z.record(z.string(), z.unknown()).nullable()
 
-export type Depth2Values = z.infer<typeof depth2ValuesSchema>
+export type Metadata = z.infer<typeof metadataSchema>
 
 /*---------------------- Records Table -----------------------*/
 export const recordsTable = pgTable('records', {
@@ -122,8 +122,8 @@ export const recordsTable = pgTable('records', {
   entityId: uuid('entity_id')
     .notNull()
     .references(() => entitiesTable.id, { onDelete: 'cascade' }),
-  depth1Values: jsonb('depth1_values').notNull().$type<Depth1Values>(),
-  depth2Values: jsonb('depth2_values').$type<Depth2Values>(),
+  fieldValues: jsonb('field_values').notNull().$type<FieldValues>(),
+  metadata: jsonb('metadata').$type<Metadata>(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 })
@@ -135,8 +135,8 @@ type _RecordsTableTypes = typeof recordsTable.$inferInsert
 export const RecordSchema = z.strictObject({
   id: z.string().regex(UUID_REGEX, 'Invalid UUID format').optional(),
   entityId: z.string().regex(UUID_REGEX, 'Invalid entity ID format'),
-  depth1Values: depth1ValuesSchema,
-  depth2Values: depth2ValuesSchema.optional(),
+  fieldValues: fieldValuesSchema,
+  metadata: metadataSchema.optional(),
   createdAt: z.date().optional(),
   updatedAt: z.date().optional(),
 })

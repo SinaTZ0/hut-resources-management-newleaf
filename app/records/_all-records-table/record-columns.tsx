@@ -65,12 +65,12 @@ const entityNameColumn: ColumnDef<RecordWithEntity> = {
   ),
 }
 
-/*------------------ Depth1 Preview Column -------------------*/
-const depth1PreviewColumn: ColumnDef<RecordWithEntity> = {
-  accessorKey: 'depth1Values',
+/*--------------- Field Values Preview Column ----------------*/
+const fieldValuesPreviewColumn: ColumnDef<RecordWithEntity> = {
+  accessorKey: 'fieldValues',
   header: 'Preview',
   cell: ({ row }) => {
-    const values = row.getValue('depth1Values')
+    const values = row.getValue('fieldValues')
     if (!values || typeof values !== 'object')
       return <span className='text-muted-foreground'>—</span>
     const entries = Object.entries(values as Record<string, unknown>).slice(0, 2)
@@ -100,16 +100,16 @@ const depth1PreviewColumn: ColumnDef<RecordWithEntity> = {
   },
 }
 
-/*-------------------- Has Depth2 Column ---------------------*/
-const hasDepth2Column: ColumnDef<RecordWithEntity> = {
-  accessorKey: 'depth2Values',
+/*------------------- Has Metadata Column --------------------*/
+const hasMetadataColumn: ColumnDef<RecordWithEntity> = {
+  accessorKey: 'metadata',
   header: 'Extra Data',
   cell: ({ row }) => {
-    const depth2 = row.getValue('depth2Values')
-    const hasDepth2 =
-      depth2 !== null && typeof depth2 === 'object' && Object.keys(depth2).length > 0
+    const metadata = row.getValue('metadata')
+    const hasMetadata =
+      metadata !== null && typeof metadata === 'object' && Object.keys(metadata).length > 0
 
-    return hasDepth2 ? (
+    return hasMetadata ? (
       <Badge variant='secondary'>Yes</Badge>
     ) : (
       <span className='text-muted-foreground text-sm'>—</span>
@@ -235,8 +235,8 @@ const actionsColumn: ColumnDef<RecordWithEntity> = {
 export const recordColumns: ColumnDef<RecordWithEntity>[] = [
   idColumn,
   entityNameColumn,
-  depth1PreviewColumn,
-  hasDepth2Column,
+  fieldValuesPreviewColumn,
+  hasMetadataColumn,
   createdAtColumn,
   actionsColumn,
 ]

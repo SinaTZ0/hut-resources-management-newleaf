@@ -36,8 +36,8 @@ export default async function EditRecordPage({ params }: EditRecordPageProps) {
           initialData={{
             id: record.id,
             entityId: record.entityId,
-            depth1Values: record.depth1Values,
-            depth2Values: record.depth2Values,
+            fieldValues: record.fieldValues,
+            metadata: record.metadata,
             createdAt: record.createdAt,
             updatedAt: record.updatedAt,
           }}

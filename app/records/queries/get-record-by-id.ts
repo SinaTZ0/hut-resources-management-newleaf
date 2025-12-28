@@ -7,8 +7,8 @@ import {
   recordsTable,
   entitiesTable,
   type FieldsSchema,
-  type Depth1Values,
-  type Depth2Values,
+  type FieldValues,
+  type Metadata,
 } from '@/lib/drizzle/schema'
 import type { QueryResult } from '@/app/entities/queries/get-entities'
 
@@ -21,8 +21,8 @@ export type RecordWithEntityDetails = {
   entityId: string
   entityName: string
   entityFields: FieldsSchema
-  depth1Values: Depth1Values
-  depth2Values: Depth2Values
+  fieldValues: FieldValues
+  metadata: Metadata
   createdAt: Date
   updatedAt: Date
 }
@@ -45,8 +45,8 @@ export async function getRecordById(id: string): Promise<QueryResult<RecordWithE
         entityId: recordsTable.entityId,
         entityName: entitiesTable.name,
         entityFields: entitiesTable.fields,
-        depth1Values: recordsTable.depth1Values,
-        depth2Values: recordsTable.depth2Values,
+        fieldValues: recordsTable.fieldValues,
+        metadata: recordsTable.metadata,
         createdAt: recordsTable.createdAt,
         updatedAt: recordsTable.updatedAt,
       })
