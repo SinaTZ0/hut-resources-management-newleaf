@@ -27,7 +27,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Badge } from '@/components/ui/badge'
 import { deleteRecord } from '@/app/records/actions/delete-record'
-import type { RecordWithEntity } from '@/app/records//queries/get-records'
+import type { RecordWithEntity } from '@/app/records/queries/get-records'
 
 /*------------------------- Helpers --------------------------*/
 function handleCopyId(id: string) {

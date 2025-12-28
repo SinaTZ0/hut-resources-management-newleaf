@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 import { getRecords } from './queries/get-records'
 import { getEntitiesWithFields } from './queries/get-entities-with-fields'
-import { RecordsTable } from './_all-recordd-table/records-table'
+import { RecordsTable } from './_all-records-table/records-table'
 import { TableBuilder } from './_table-builder/table-builder'
 
 /*------------------------- Helpers --------------------------*/
