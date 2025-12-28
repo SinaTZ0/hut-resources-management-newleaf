@@ -6,7 +6,7 @@ import { db } from '@/lib/drizzle/db'
 import {
   recordsTable,
   entitiesTable,
-  type Depth1Schema,
+  type FieldsSchema,
   type Depth1Values,
   type Depth2Values,
 } from '@/lib/drizzle/schema'
@@ -21,7 +21,7 @@ export type RecordsByEntityResult = {
     id: string
     name: string
     description: string | null
-    fields: Depth1Schema
+    fields: FieldsSchema
   }
   records: Array<{
     id: string

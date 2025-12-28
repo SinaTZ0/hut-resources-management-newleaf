@@ -1,7 +1,7 @@
 'use server'
 
 import { db } from '@/lib/drizzle/db'
-import { entitiesTable, type Depth1Schema } from '@/lib/drizzle/schema'
+import { entitiesTable, type FieldsSchema } from '@/lib/drizzle/schema'
 import type { QueryResult } from '@/app/entities/queries/get-entities'
 
 /*-------------------------- Types ---------------------------*/
@@ -9,7 +9,7 @@ export type EntityWithFields = {
   id: string
   name: string
   description: string | null
-  fields: Depth1Schema
+  fields: FieldsSchema
 }
 
 /*----------------- Get Entities With Fields -----------------*/
