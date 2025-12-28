@@ -194,10 +194,10 @@ export function RecordForm({ mode, entity, initialData }: RecordFormProps) {
   return (
     <form onSubmit={(e) => void form.handleSubmit(onSubmit)(e)} className='flex flex-col gap-8'>
       {/*-------------------------- Header --------------------------*/}
-      <div className='flex items-center gap-4'>
+      <div className='flex items-start gap-4'>
         <Button variant='ghost' size='icon' asChild data-testid='record-form-back-btn'>
           <Link href={isEditMode && initialData ? `/records/${initialData.id}` : '/records'}>
-            <ArrowLeft className='h-4 w-4' />
+            <ArrowLeft className='size-6' />
           </Link>
         </Button>
         <div className='flex flex-col gap-1'>
@@ -226,7 +226,7 @@ export function RecordForm({ mode, entity, initialData }: RecordFormProps) {
       </Card>
 
       {/*--------------------- Depth 2 Section ----------------------*/}
-      <Card data-testid='depth2-card'>
+      <Card className={cn(themeClasses.card)} data-testid='depth2-card'>
         <CardHeader>
           <CardTitle>Additional Details</CardTitle>
           <CardDescription>

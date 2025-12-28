@@ -24,8 +24,8 @@ export default async function EditRecordPage({ params }: EditRecordPageProps) {
 
   /*-------------------------- Render --------------------------*/
   return (
-    <main className='container py-6'>
-      <div className='mx-auto max-w-3xl'>
+    <main className='container py-6 m-auto'>
+      <div className='max-w-3xl m-auto'>
         <RecordForm
           mode='edit'
           entity={{

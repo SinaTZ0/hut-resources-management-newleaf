@@ -24,8 +24,8 @@ export default async function CreateRecordPage({ searchParams }: CreateRecordPag
 
     if (!entitiesResult.success) {
       return (
-        <main className='container py-6'>
-          <Card>
+        <main className='container py-6 mx-auto'>
+          <Card className='mx-auto max-w-2xl'>
             <CardHeader>
               <CardTitle>Error</CardTitle>
               <CardDescription>{entitiesResult.error}</CardDescription>
@@ -37,7 +37,7 @@ export default async function CreateRecordPage({ searchParams }: CreateRecordPag
 
     if (entitiesResult.data.length === 0) {
       return (
-        <main className='container py-6'>
+        <main className='container py-6 mx-auto'>
           <div className='mx-auto max-w-2xl'>
             <Card>
               <CardHeader>
@@ -58,7 +58,7 @@ export default async function CreateRecordPage({ searchParams }: CreateRecordPag
     }
 
     return (
-      <main className='container py-6'>
+      <main className='container py-6 mx-auto'>
         <div className='mx-auto max-w-2xl'>
           <Card>
             <CardHeader>
@@ -90,7 +90,7 @@ export default async function CreateRecordPage({ searchParams }: CreateRecordPag
 
   /*-------------------------- Render --------------------------*/
   return (
-    <main className='container py-6'>
+    <main className='container py-6 mx-auto'>
       <div className='mx-auto max-w-3xl'>
         <RecordForm
           mode='create'
