@@ -45,6 +45,13 @@ export function sanitizeJson(input: unknown, depth = 0): Record<string, unknown>
     // Recursively sanitize nested objects
     if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
       sanitized[key] = sanitizeJson(value, depth + 1)
+    } else if (Array.isArray(value)) {
+      // Recursively sanitize object elements within arrays
+      sanitized[key] = value.map((item): unknown =>
+        typeof item === 'object' && item !== null && !Array.isArray(item)
+          ? sanitizeJson(item, depth + 1)
+          : item
+      )
     } else {
       sanitized[key] = value
     }
