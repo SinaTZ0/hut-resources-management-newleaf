@@ -1,16 +1,11 @@
 'use server'
 
 import { db } from '@/lib/drizzle/db'
-import { entitiesTable, type FieldsSchema } from '@/lib/drizzle/schema'
-import type { QueryResult } from '@/app/entities/queries/get-entities'
+import { entitiesTable, type EntitySchema } from '@/lib/drizzle/schema'
+import type { QueryResult } from '@/types-and-schemas/common'
 
 /*-------------------------- Types ---------------------------*/
-export type EntityWithFields = {
-  id: string
-  name: string
-  description: string | null
-  fields: FieldsSchema
-}
+export type EntityWithFields = Pick<EntitySchema, 'id' | 'name' | 'description' | 'fields'>
 
 /*----------------- Get Entities With Fields -----------------*/
 export async function getEntitiesWithFields(): Promise<QueryResult<EntityWithFields[]>> {

@@ -1,6 +1,6 @@
 import { z } from 'zod/v4'
 
-import type { FieldsSchema, FieldSchema } from '@/lib/drizzle/schema'
+import type { FieldsSchema as FieldsSchemaType, FieldSchema } from '@/lib/drizzle/schema'
 
 /*-------------- Create Field Schema From Type ---------------*/
 function createFieldSchema(field: FieldSchema): z.ZodType {
@@ -36,11 +36,11 @@ function createFieldSchema(field: FieldSchema): z.ZodType {
   return schema
 }
 
-/*------------ Create Depth1 Form Schema Factory -------------*/
+/*--------- Create Field Values Form Schema Factory ----------*/
 /**
  * Generates a Zod schema dynamically based on Entity's FieldsSchema
  */
-export function createDepth1FormSchema(FieldsSchema: FieldsSchema) {
+export function createFieldValuesFormSchema(FieldsSchema: FieldsSchemaType) {
   const shape: Record<string, z.ZodType> = {}
 
   for (const [key, field] of Object.entries(FieldsSchema)) {
@@ -54,7 +54,7 @@ export function createDepth1FormSchema(FieldsSchema: FieldsSchema) {
 /**
  * Generates default values for a form based on Entity's FieldsSchema
  */
-export function getDefaultDepth1Values(FieldsSchema: FieldsSchema): Record<string, unknown> {
+export function getDefaultFieldValues(FieldsSchema: FieldsSchemaType): Record<string, unknown> {
   const defaults: Record<string, unknown> = {}
 
   for (const [key, field] of Object.entries(FieldsSchema)) {

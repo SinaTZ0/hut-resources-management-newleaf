@@ -1,6 +1,6 @@
 import { format } from 'date-fns'
 
-import type { FieldsSchema, Depth1Values } from '@/lib/drizzle/schema'
+import type { FieldsSchema, FieldValues } from '@/lib/drizzle/schema'
 import {
   Table,
   TableBody,
@@ -12,9 +12,9 @@ import {
 import { Badge } from '@/components/ui/badge'
 
 /*------------------------ Props Type ------------------------*/
-type Depth1DisplayProps = Readonly<{
+type FieldValuesDisplayProps = Readonly<{
   fields: FieldsSchema
-  values: Depth1Values
+  values: FieldValues
 }>
 
 /*----------------------- Format Value -----------------------*/
@@ -48,13 +48,13 @@ function formatValue(value: unknown, type: string): string {
 }
 
 /*------------------------ Component -------------------------*/
-export function Depth1Display({ fields, values }: Depth1DisplayProps) {
+export function FieldValuesDisplay({ fields, values }: FieldValuesDisplayProps) {
   /*------------------- Sort Fields By Order -------------------*/
   const sortedFields = Object.entries(fields).sort(([, a], [, b]) => a.order - b.order)
 
   /*-------------------------- Render --------------------------*/
   return (
-    <Table data-testid='depth1-display'>
+    <Table data-testid='field-values-display'>
       <TableHeader>
         <TableRow>
           <TableHead className='w-[200px]'>Field</TableHead>
@@ -64,7 +64,7 @@ export function Depth1Display({ fields, values }: Depth1DisplayProps) {
       </TableHeader>
       <TableBody>
         {sortedFields.map(([key, fieldDef]) => (
-          <TableRow key={key} data-testid={`depth1-row-${key}`}>
+          <TableRow key={key} data-testid={`field-values-row-${key}`}>
             <TableCell className='font-medium'>
               {fieldDef.label}
               {fieldDef.required && <span className='text-destructive ml-1'>*</span>}
@@ -74,7 +74,7 @@ export function Depth1Display({ fields, values }: Depth1DisplayProps) {
                 {fieldDef.type}
               </Badge>
             </TableCell>
-            <TableCell data-testid={`depth1-value-${key}`}>
+            <TableCell data-testid={`field-values-value-${key}`}>
               {formatValue(values[key], fieldDef.type)}
             </TableCell>
           </TableRow>

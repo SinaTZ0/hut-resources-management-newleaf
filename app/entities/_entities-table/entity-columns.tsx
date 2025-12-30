@@ -26,7 +26,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Badge } from '@/components/ui/badge'
-import type { SelectEntitySchemaType } from '@/lib/drizzle/schema'
+import type { EntitySchema } from '@/lib/drizzle/schema'
 import { deleteEntity } from '@/app/entities/actions/delete-entity'
 
 /*------------------------- Helpers --------------------------*/
@@ -36,7 +36,7 @@ function handleCopyId(id: string) {
 }
 
 /*----------------------- Name Column ------------------------*/
-const nameColumn: ColumnDef<SelectEntitySchemaType> = {
+const nameColumn: ColumnDef<EntitySchema> = {
   accessorKey: 'name',
   header: ({ column }) => (
     <Button variant='ghost' onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
@@ -48,7 +48,7 @@ const nameColumn: ColumnDef<SelectEntitySchemaType> = {
 }
 
 /*-------------------- Description Column --------------------*/
-const descriptionColumn: ColumnDef<SelectEntitySchemaType> = {
+const descriptionColumn: ColumnDef<EntitySchema> = {
   accessorKey: 'description',
   header: 'Description',
   cell: ({ row }) => {
@@ -63,7 +63,7 @@ const descriptionColumn: ColumnDef<SelectEntitySchemaType> = {
 }
 
 /*---------------------- Fields Column -----------------------*/
-const fieldsColumn: ColumnDef<SelectEntitySchemaType> = {
+const fieldsColumn: ColumnDef<EntitySchema> = {
   accessorKey: 'fields',
   header: 'Fields',
   cell: ({ row }) => {
@@ -78,7 +78,7 @@ const fieldsColumn: ColumnDef<SelectEntitySchemaType> = {
 }
 
 /*-------------------- Created At Column ---------------------*/
-const createdAtColumn: ColumnDef<SelectEntitySchemaType> = {
+const createdAtColumn: ColumnDef<EntitySchema> = {
   accessorKey: 'createdAt',
   header: ({ column }) => (
     <Button variant='ghost' onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
@@ -94,7 +94,7 @@ const createdAtColumn: ColumnDef<SelectEntitySchemaType> = {
 }
 
 /*---------------------- Actions Column ----------------------*/
-function EntityActionsCell({ entity }: Readonly<{ entity: SelectEntitySchemaType }>) {
+function EntityActionsCell({ entity }: Readonly<{ entity: EntitySchema }>) {
   /*-------------------------- State ---------------------------*/
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
@@ -188,14 +188,14 @@ function EntityActionsCell({ entity }: Readonly<{ entity: SelectEntitySchemaType
   )
 }
 
-const actionsColumn: ColumnDef<SelectEntitySchemaType> = {
+const actionsColumn: ColumnDef<EntitySchema> = {
   id: 'actions',
   enableHiding: false,
   cell: ({ row }) => <EntityActionsCell entity={row.original} />,
 }
 
 /*------------------------- Columns --------------------------*/
-export const entityColumns: ColumnDef<SelectEntitySchemaType>[] = [
+export const entityColumns: ColumnDef<EntitySchema>[] = [
   nameColumn,
   descriptionColumn,
   fieldsColumn,

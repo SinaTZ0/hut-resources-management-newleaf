@@ -21,8 +21,3 @@ const environment = {
 }
 
 export default environment
-
-/*----------------------- Type Exports -----------------------*/
-export type ServerEnvironment = z.infer<typeof serverEnvironmentSchema>
-export type ClientEnvironment = z.infer<typeof clientEnvironmentSchema>
-export type Environment = typeof environment

@@ -16,13 +16,10 @@ import {
 } from '@/components/ui/command'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Field, FieldDescription, FieldError, FieldLabel } from '@/components/ui/field'
+import type { EntitySchema } from '@/lib/drizzle/schema'
 
 /*-------------------------- Types ---------------------------*/
-type Entity = {
-  id: string
-  name: string
-  description: string | null
-}
+type Entity = Pick<EntitySchema, 'id' | 'name' | 'description'>
 
 type EntitySelectorProps = {
   readonly entities: Entity[]

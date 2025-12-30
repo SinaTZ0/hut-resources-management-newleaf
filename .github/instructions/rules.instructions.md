@@ -79,28 +79,30 @@ app/records/
 Use `type` for everything. Drive from `schema.ts`:
 
 ```ts
-// schema.ts
-import { usersTable } from '@/db/schema'
-import { z } from 'zod'
+// lib/drizzle/schema.ts — Drizzle tables + Zod schemas + inferred types
+export const userSchema = z.strictObject({ ... })
+export type UserSchemaType = z.infer<typeof userSchema>
+export type InsertUserSchemaType = z.infer<typeof InsertUserSchema>
+export type SelectUserSchemaType = z.infer<typeof SelectUserSchema>
 
-export type InsertUser = typeof usersTable.$inferInsert
-export type SelectUser = typeof usersTable.$inferSelect
-
-export const userSchema = z.strictObject({
-  id: z.string().uuid().optional(),
-  name: z.string().min(1),
-  email: z.string().email(),
-  description: z.string().nullable().optional(),
-  createdAt: z.date().optional(),
-  updatedAt: z.date().optional(),
-})
-
-export type User = z.infer<typeof userSchema>
-
-// Form schemas: pick or refine
-export const userFormSchema = userSchema.pick({ name: true, email: true })
-export type UserFormData = z.infer<typeof userFormSchema>
+// Derive new types using Pick, Omit, Simplify (type-fest)
+export type UserWithRole = Simplify<SelectUserSchemaType & { role: string }>
+export type UserSummary = Pick<SelectUserSchemaType, 'id' | 'name'>
 ```
+
+## Shared Types
+
+Put reusable types in `types-and-schemas/`:
+
+```ts
+// types-and-schemas/common.ts
+export type ActionResult<T = void> =
+  | { success: true; data: T }
+  | { success: false; error: string; fieldErrors?: Record<string, string[]> }
+export type QueryResult<T> = { success: true; data: T } | { success: false; error: string }
+```
+
+**Rule:** NEVER duplicate `ActionResult`, `QueryResult`, or other shared types—import from `types-and-schemas/`.
 
 # Code Organization
 
@@ -177,6 +179,37 @@ Format: `[context]-[element]-[purpose]` (kebab-case)
 ```
 
 **Reusable components:** Accept optional `testId` prop
+
+# Page Documentation
+
+Every `page.tsx` must have a `PAGE-FLOW.md` file at the same level documenting:
+
+- **User Journey** — Mermaid flowchart showing URL → query → component → action → redirect
+- **Flow Summary** — Table: Step | URL | Query | Component | User Action
+- **Data Queries** — What data is fetched, shape passed to components
+- **Edge Cases** — Error handling, not found, empty states
+
+**Rules:**
+
+- Create `PAGE-FLOW.md` when adding a new page
+- Update `PAGE-FLOW.md` when modifying page flow or components
+- Use general descriptions (e.g., "fetch entity" not "getEntityById()") to avoid maintenance burden
+- Use Mermaid `flowchart TD` diagrams (renders in GitHub, VS Code, etc.)
+- Style error nodes with `fill:#f66` and success nodes with `fill:#6f6`
+
+**Example Mermaid diagram:**
+
+```mermaid
+flowchart TD
+    A[User visits /page] --> B[page.tsx]
+    B --> C[Query: fetch data]
+    C --> D{Success?}
+    D -->|Error| E[Show error]
+    D -->|Success| F[Render component]
+
+    style E fill:#f66
+    style F fill:#6f6
+```
 
 # Checklist
 

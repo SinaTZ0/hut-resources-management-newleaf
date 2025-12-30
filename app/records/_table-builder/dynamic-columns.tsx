@@ -28,16 +28,10 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Badge } from '@/components/ui/badge'
 import { deleteRecord } from '@/app/records/actions/delete-record'
-import type { FieldsSchema, FieldSchema, Depth1Values } from '@/lib/drizzle/schema'
+import type { FieldsSchema, FieldSchema, RecordSchema } from '@/lib/drizzle/schema'
 
 /*-------------------------- Types ---------------------------*/
-export type DynamicRecord = {
-  id: string
-  depth1Values: Depth1Values
-  depth2Values: Record<string, unknown> | null
-  createdAt: Date
-  updatedAt: Date
-}
+export type DynamicRecord = Omit<RecordSchema, 'entityId'>
 
 /*------------------------- Helpers --------------------------*/
 function handleCopyId(id: string) {
@@ -97,9 +91,9 @@ export function generateDynamicColumns(fields: FieldsSchema): ColumnDef<DynamicR
   const fieldColumns: ColumnDef<DynamicRecord>[] = sortedFields.map(([fieldKey, fieldConfig]) => {
     const baseColumn: ColumnDef<DynamicRecord> = {
       id: fieldKey,
-      accessorFn: (row) => row.depth1Values[fieldKey],
+      accessorFn: (row) => row.fieldValues[fieldKey],
       cell: ({ row }) => {
-        const value = row.original.depth1Values[fieldKey]
+        const value = row.original.fieldValues[fieldKey]
         const formatted = formatFieldValue(value, fieldConfig.type)
 
         // Style based on field type
@@ -140,16 +134,16 @@ export function generateDynamicColumns(fields: FieldsSchema): ColumnDef<DynamicR
     return baseColumn
   })
 
-  /*-------------------- Has Depth2 Column ---------------------*/
-  const hasDepth2Column: ColumnDef<DynamicRecord> = {
-    id: 'hasDepth2',
+  /*------------------- Has Metadata Column --------------------*/
+  const hasMetadataColumn: ColumnDef<DynamicRecord> = {
+    id: 'hasMetadata',
     header: 'Extra Data',
     cell: ({ row }) => {
-      const depth2 = row.original.depth2Values
-      const hasDepth2 =
-        depth2 !== null && typeof depth2 === 'object' && Object.keys(depth2).length > 0
+      const metadata = row.original.metadata
+      const hasMetadata =
+        metadata !== null && typeof metadata === 'object' && Object.keys(metadata).length > 0
 
-      return hasDepth2 ? (
+      return hasMetadata ? (
         <Badge variant='secondary'>Yes</Badge>
       ) : (
         <span className='text-muted-foreground text-sm'>—</span>
@@ -180,7 +174,7 @@ export function generateDynamicColumns(fields: FieldsSchema): ColumnDef<DynamicR
     cell: ({ row }) => <RecordActionsCell record={row.original} />,
   }
 
-  return [idColumn, ...fieldColumns, hasDepth2Column, createdAtColumn, actionsColumn]
+  return [idColumn, ...fieldColumns, hasMetadataColumn, createdAtColumn, actionsColumn]
 }
 
 /*------------------ Actions Cell Component ------------------*/

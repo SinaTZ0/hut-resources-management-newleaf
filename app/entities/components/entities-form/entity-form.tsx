@@ -4,41 +4,33 @@ import { useTransition } from 'react'
 import { useForm, useFieldArray } from 'react-hook-form'
 import { useRouter } from 'next/navigation'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
 import { toast } from 'sonner'
 import { ArrowLeft, Loader2 } from 'lucide-react'
 import Link from 'next/link'
 
 import {
   type FieldSchema,
-  EntitySchema,
-  type EntitySchemaType,
-  InsertEntitySchema,
-  fieldSchema,
-  type SelectEntitySchemaType,
+  type EntitySchema,
+  type InsertEntitySchema,
+  insertEntitySchema,
 } from '@/lib/drizzle/schema'
-import { toSnakeCase, cn } from '@/lib/utils/common-utils'
+import { cn, toSnakeCase } from '@/lib/utils/common-utils'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
-import { createEntity, type ActionResult } from '@/app/entities/actions/create-entity'
+import { createEntity } from '@/app/entities/actions/create-entity'
 import { updateEntity } from '@/app/entities/actions/update-entity'
+import type { ActionResult } from '@/types-and-schemas/common'
 
 import { SavedFieldsList } from './saved-fields-list'
 import { FieldBuilder } from './field-builder'
 import { EntityInfoForm } from './entity-info-form'
-
-/*---------------------- Parent Schema -----------------------*/
-const parentSchema = InsertEntitySchema.extend({
-  fields: z.array(fieldSchema).min(1, 'Fields must have at least one field'),
-})
-
-type ParentFormValues = z.input<typeof parentSchema>
+import { entityFormSchema, type EntityFormValues } from './entities-form-schema'
 
 /*------------------------ Props Type ------------------------*/
 type EntityFormProps = {
   readonly mode: 'create' | 'edit'
-  readonly initialData?: SelectEntitySchemaType
+  readonly initialData?: EntitySchema
 }
 
 /*------------------------ Component -------------------------*/
@@ -49,8 +41,8 @@ export function CreateAndUpdateEntityForm({ mode, initialData }: EntityFormProps
 
   const isEditMode = mode === 'edit'
 
-  /*------------------ Transform Initial Data ------------------*/
-  const getInitialFields = (): ParentFormValues['fields'] => {
+  /*----------- Transform Initial Data for Edit Mode -----------*/
+  const getInitialFields = (): EntityFormValues['fields'] => {
     if (!initialData?.fields) return []
 
     return Object.entries(initialData.fields)
@@ -63,10 +55,9 @@ export function CreateAndUpdateEntityForm({ mode, initialData }: EntityFormProps
       }))
       .sort((a, b) => a.order - b.order)
   }
-
-  /*----------------------- Parent Form ------------------------*/
-  const parentForm = useForm<ParentFormValues>({
-    resolver: zodResolver(parentSchema),
+  /*------------------------ Form Setup ------------------------*/
+  const form = useForm({
+    resolver: zodResolver(entityFormSchema),
     defaultValues: {
       name: initialData?.name ?? '',
       description: initialData?.description ?? '',
@@ -74,14 +65,13 @@ export function CreateAndUpdateEntityForm({ mode, initialData }: EntityFormProps
     },
   })
 
-  const { control, handleSubmit } = parentForm
+  const { control, handleSubmit } = form
 
   const {
     fields: savedFields,
     append,
     remove,
     move,
-    update,
   } = useFieldArray({
     control,
     name: 'fields',
@@ -96,23 +86,10 @@ export function CreateAndUpdateEntityForm({ mode, initialData }: EntityFormProps
 
   const handleRemoveField = (index: number) => {
     remove(index)
-    const current = parentForm.getValues('fields') as FieldSchema[] | undefined
-    if (!current) return
-    for (let i = 0; i < current.length; i++) {
-      const f = current[i]
-      update(i, { ...f, order: i })
-    }
   }
 
   const handleReorder = (oldIndex: number, newIndex: number) => {
     move(oldIndex, newIndex)
-
-    const current = parentForm.getValues('fields') as FieldSchema[] | undefined
-    if (!current) return
-    for (let i = 0; i < current.length; i++) {
-      const f = current[i]
-      update(i, { ...f, order: i })
-    }
   }
 
   /*--------------------- Computed Values ----------------------*/
@@ -123,12 +100,13 @@ export function CreateAndUpdateEntityForm({ mode, initialData }: EntityFormProps
     }
     return isEditMode ? 'Update Entity' : 'Create Entity'
   }
-  const normalizedFields = savedFields.map((f) => ({
+  // Normalize fields with defaults for SavedFieldsList (which expects FieldSchema)
+  const normalizedFields: FieldSchema[] = savedFields.map((f) => ({
     ...f,
     sortable: f.sortable ?? true,
     required: f.required ?? false,
   }))
-  const fieldsError = parentForm.formState.errors.fields?.message
+  const fieldsError = form.formState.errors.fields?.message
 
   /*---------------------- Theme Classes -----------------------*/
   const themeClasses = isEditMode
@@ -142,28 +120,28 @@ export function CreateAndUpdateEntityForm({ mode, initialData }: EntityFormProps
       }
 
   /*-------------------------- Submit --------------------------*/
-  const onParentSubmit = (data: ParentFormValues) => {
-    /*------------ Transform to Fields(Depth1) Schema ------------*/
+  const onSubmit = (data: EntityFormValues) => {
+    /*--------------- Transform to array to record ---------------*/
     const fields: Record<string, FieldSchema> = {}
     data.fields.forEach((f, idx) => {
       const key: string = toSnakeCase(f.label)
       fields[key] = {
         label: f.label,
         type: f.type,
-        sortable: f.sortable ?? true,
-        required: f.required ?? false,
+        sortable: f.sortable,
+        required: f.required,
         order: idx,
       }
     })
 
     /*---------------- Build payload and validate ----------------*/
-    const payload: EntitySchemaType = {
+    const payload: InsertEntitySchema = {
       name: data.name,
-      description: data.description || undefined,
+      description: data.description,
       fields,
     }
 
-    const result = EntitySchema.safeParse(payload)
+    const result = insertEntitySchema.safeParse(payload)
     if (!result.success) {
       console.error('Entity validation failed:', result.error)
       toast.error('Validation failed. Please check your input.')
@@ -186,12 +164,13 @@ export function CreateAndUpdateEntityForm({ mode, initialData }: EntityFormProps
       if (!actionResult.success) {
         toast.error(actionResult.error)
 
+        // Attach field errors to form fields
         if (actionResult.fieldErrors) {
           Object.entries(actionResult.fieldErrors).forEach(([field, fieldErrors]) => {
             if (field === 'name') {
-              parentForm.setError('name', { message: fieldErrors[0] })
+              form.setError('name', { message: fieldErrors[0] })
             } else if (field === 'description') {
-              parentForm.setError('description', { message: fieldErrors[0] })
+              form.setError('description', { message: fieldErrors[0] })
             }
           })
         }
@@ -207,7 +186,7 @@ export function CreateAndUpdateEntityForm({ mode, initialData }: EntityFormProps
   return (
     <form
       onSubmit={(e) => {
-        void handleSubmit(onParentSubmit)(e)
+        void handleSubmit(onSubmit)(e)
       }}
       className='flex flex-col max-w-6xl w-full m-auto gap-8 px-4 sm:px-6'
     >
@@ -239,7 +218,7 @@ export function CreateAndUpdateEntityForm({ mode, initialData }: EntityFormProps
             <h2 className='text-xl font-semibold'>1. Entity Details</h2>
 
             <Separator />
-            <EntityInfoForm form={parentForm} />
+            <EntityInfoForm form={form} />
           </div>
           {/*---------------------- Field Builder -----------------------*/}
           <div className='flex flex-col gap-4'>

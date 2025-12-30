@@ -2,67 +2,28 @@
 
 import { revalidatePath } from 'next/cache'
 import { eq } from 'drizzle-orm'
-import { z } from 'zod/v4'
+import { DatabaseError } from 'pg'
 
 import { db } from '@/lib/drizzle/db'
 import {
   recordsTable,
   entitiesTable,
-  InsertRecordSchema,
-  type InsertRecordSchemaType,
-  type Depth1Values,
+  insertRecordSchema,
+  type InsertRecordSchema,
+  type FieldValues,
 } from '@/lib/drizzle/schema'
+import { sanitizeJson } from '@/lib/utils/common-utils'
+import { formatZodErrors, type ActionResult } from '@/types-and-schemas/common'
 
-import { createDepth1FormSchema } from '../components/records-form/schema'
-
-/*---------------------- Action Result -----------------------*/
-export type ActionResult<T = void> =
-  | { success: true; data: T }
-  | { success: false; error: string; fieldErrors?: Record<string, string[]> }
-
-/*-------------------- Format Zod Errors ---------------------*/
-function formatZodErrors(error: z.ZodError, prefix?: string): Record<string, string[]> {
-  const fieldErrors: Record<string, string[]> = {}
-
-  for (const issue of error.issues) {
-    const path = prefix ? `${prefix}.${issue.path.join('.')}` : issue.path.join('.')
-    if (!(path in fieldErrors)) {
-      fieldErrors[path] = []
-    }
-    fieldErrors[path].push(issue.message)
-  }
-
-  return fieldErrors
-}
-
-/*---------------------- Sanitize JSON -----------------------*/
-function sanitizeJson(input: unknown): Record<string, unknown> | null {
-  if (input === null || input === undefined) return null
-
-  // Ensure it's an object (not array, not primitive)
-  if (typeof input !== 'object' || Array.isArray(input)) {
-    throw new Error('Depth 2 must be a JSON object')
-  }
-
-  // Remove __proto__ and constructor attacks
-  const sanitized: Record<string, unknown> = {}
-  for (const [key, value] of Object.entries(input as Record<string, unknown>)) {
-    if (key === '__proto__' || key === 'constructor' || key === 'prototype') {
-      continue
-    }
-    sanitized[key] = value
-  }
-
-  return sanitized
-}
+import { createFieldValuesFormSchema } from '../components/records-form/record-form-schema'
 
 /*---------------------- Create Record -----------------------*/
 export async function createRecord(
-  payload: InsertRecordSchemaType
+  payload: InsertRecordSchema
 ): Promise<ActionResult<{ id: string }>> {
   try {
     /*--------------------- Base Validation ----------------------*/
-    const baseParsed = InsertRecordSchema.safeParse(payload)
+    const baseParsed = insertRecordSchema.safeParse(payload)
 
     if (!baseParsed.success) {
       return {
@@ -88,26 +49,26 @@ export async function createRecord(
 
     const entity = entities[0]
 
-    /*----------------- Validate Depth 1 Values ------------------*/
-    const depth1Schema = createDepth1FormSchema(entity.fields)
-    const depth1Parsed = depth1Schema.safeParse(baseParsed.data.depth1Values)
+    /*------------------ Validate Field Values -------------------*/
+    const fieldValuesSchemaForEntity = createFieldValuesFormSchema(entity.fields)
+    const fieldValuesParsed = fieldValuesSchemaForEntity.safeParse(baseParsed.data.fieldValues)
 
-    if (!depth1Parsed.success) {
+    if (!fieldValuesParsed.success) {
       return {
         success: false,
-        error: 'Depth 1 validation failed',
-        fieldErrors: formatZodErrors(depth1Parsed.error, 'depth1Values'),
+        error: 'Field values validation failed',
+        fieldErrors: formatZodErrors(fieldValuesParsed.error, 'fieldValues'),
       }
     }
 
-    /*----------------- Sanitize Depth 2 Values ------------------*/
-    let sanitizedDepth2: Record<string, unknown> | null = null
+    /*-------------------- Sanitize Metadata ---------------------*/
+    let sanitizedMetadata: Record<string, unknown> | null = null
     try {
-      sanitizedDepth2 = sanitizeJson(baseParsed.data.depth2Values)
+      sanitizedMetadata = sanitizeJson(baseParsed.data.metadata)
     } catch (e) {
       return {
         success: false,
-        error: e instanceof Error ? e.message : 'Invalid depth 2 data',
+        error: e instanceof Error ? e.message : 'Invalid metadata',
       }
     }
 
@@ -116,8 +77,8 @@ export async function createRecord(
       .insert(recordsTable)
       .values({
         entityId: baseParsed.data.entityId,
-        depth1Values: depth1Parsed.data as Depth1Values,
-        depth2Values: sanitizedDepth2,
+        fieldValues: fieldValuesParsed.data as FieldValues,
+        metadata: sanitizedMetadata,
       })
       .returning({ id: recordsTable.id })
 
@@ -135,19 +96,21 @@ export async function createRecord(
     /*---------------------- Error Handling ----------------------*/
     console.error('Create record error:', error)
 
-    // Handle foreign key constraint violation
-    if (error instanceof Error && error.message.includes('foreign key')) {
-      return {
-        success: false,
-        error: 'Invalid entity reference',
+    // Handle Postgres errors using error codes
+    if (error instanceof DatabaseError) {
+      // 23503 = foreign_key_violation
+      if (error.code === '23503') {
+        return {
+          success: false,
+          error: 'Invalid entity reference',
+        }
       }
-    }
-
-    // Handle database connection errors
-    if (error instanceof Error && error.message.includes('connect')) {
-      return {
-        success: false,
-        error: 'Database connection failed. Please try again later.',
+      // 08xxx = connection exceptions
+      if (error.code?.startsWith('08')) {
+        return {
+          success: false,
+          error: 'Database connection failed. Please try again later.',
+        }
       }
     }
 

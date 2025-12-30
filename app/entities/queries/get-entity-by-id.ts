@@ -4,11 +4,8 @@ import { eq } from 'drizzle-orm'
 
 import { db } from '@/lib/drizzle/db'
 import { entitiesTable } from '@/lib/drizzle/schema'
-
-import type { QueryResult } from './get-entities'
-
-/*------------------------ UUID Regex ------------------------*/
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+import { isValidUUID } from '@/lib/utils/common-utils'
+import type { QueryResult } from '@/types-and-schemas/common'
 
 /*--------------------- Get Entity By ID ---------------------*/
 export async function getEntityById(
@@ -16,7 +13,7 @@ export async function getEntityById(
 ): Promise<QueryResult<typeof entitiesTable.$inferSelect>> {
   try {
     /*------------------------ Validation ------------------------*/
-    if (!id || typeof id !== 'string' || !UUID_REGEX.test(id)) {
+    if (!isValidUUID(id)) {
       return {
         success: false,
         error: 'Invalid entity ID provided.',

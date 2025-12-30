@@ -2,7 +2,7 @@
 
 import { notFound } from 'next/navigation'
 
-import { getRecordById } from '@/app/records/queries/get-record-by-id'
+import { getRecordWithEntityById } from '@/app/records/queries/get-record-with-entity-by-id'
 
 import { RecordDetails } from './_record-details/record-details'
 
@@ -16,7 +16,7 @@ export default async function RecordDetailsPage({ params }: RecordDetailsPagePro
   const { id } = await params
 
   /*----------------------- Fetch Record -----------------------*/
-  const result = await getRecordById(id)
+  const result = await getRecordWithEntityById(id)
 
   if (!result.success) {
     notFound()

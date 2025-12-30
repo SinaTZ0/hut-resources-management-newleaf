@@ -8,12 +8,7 @@ import { toast } from 'sonner'
 import { ArrowLeft, Loader2 } from 'lucide-react'
 import Link from 'next/link'
 
-import type {
-  FieldsSchema,
-  Depth1Values,
-  Depth2Values,
-  SelectRecordSchemaType,
-} from '@/lib/drizzle/schema'
+import type { EntitySchema, FieldValues, Metadata, RecordSchema } from '@/lib/drizzle/schema'
 import { cn } from '@/lib/utils/common-utils'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -21,44 +16,40 @@ import { Separator } from '@/components/ui/separator'
 import { createRecord } from '@/app/records/actions/create-record'
 import { updateRecord } from '@/app/records/actions/update-record'
 
-import { createDepth1FormSchema, getDefaultDepth1Values } from './schema'
-import { Depth1Form } from './depth1-form'
-import { Depth2Editor } from './depth2-editor'
+import { createFieldValuesFormSchema, getDefaultFieldValues } from './record-form-schema'
+import { FieldValuesForm } from './field-values-form'
+import { MetadataEditor } from './metadata-editor'
 
 /*-------------------------- Types ---------------------------*/
-type EntityData = {
-  id: string
-  name: string
-  fields: FieldsSchema
-}
+type EntityData = Pick<EntitySchema, 'id' | 'name' | 'fields'>
 
 type RecordFormProps = {
   readonly mode: 'create' | 'edit'
   readonly entity: EntityData
-  readonly initialData?: SelectRecordSchemaType
+  readonly initialData?: RecordSchema
 }
 
 /*------------------------ Component -------------------------*/
 export function RecordForm({ mode, entity, initialData }: RecordFormProps) {
   /*-------------------------- State ---------------------------*/
   const [isPending, startTransition] = useTransition()
-  const [depth2Value, setDepth2Value] = useState<string | null>(
-    initialData?.depth2Values ? JSON.stringify(initialData.depth2Values, null, 2) : null
+  const [metadataValue, setMetadataValue] = useState<string | null>(
+    initialData?.metadata ? JSON.stringify(initialData.metadata, null, 2) : null
   )
-  const [depth2Error, setDepth2Error] = useState<string | undefined>()
+  const [metadataError, setMetadataError] = useState<string | undefined>()
   const router = useRouter()
 
   const isEditMode = mode === 'edit'
 
   /*------------------ Create Dynamic Schema -------------------*/
-  const FieldsSchema = createDepth1FormSchema(entity.fields)
+  const FieldsSchema = createFieldValuesFormSchema(entity.fields)
 
   /*-------------------- Get Initial Values --------------------*/
-  const getInitialValues = (): Depth1Values => {
-    if (initialData?.depth1Values) {
-      return initialData.depth1Values
+  const getInitialValues = (): FieldValues => {
+    if (initialData?.fieldValues) {
+      return initialData.fieldValues
     }
-    return getDefaultDepth1Values(entity.fields) as Depth1Values
+    return getDefaultFieldValues(entity.fields) as FieldValues
   }
 
   /*------------------------ Form Setup ------------------------*/
@@ -86,17 +77,17 @@ export function RecordForm({ mode, entity, initialData }: RecordFormProps) {
         card: '',
       }
 
-  /*-------------------- Parse Depth2 Value --------------------*/
-  const parseDepth2Value = useCallback((): Depth2Values => {
-    if (!depth2Value || depth2Value.trim() === '') {
+  /*---------------------- Parse Metadata ----------------------*/
+  const parseMetadata = useCallback((): Metadata => {
+    if (!metadataValue || metadataValue.trim() === '') {
       return null
     }
 
     try {
-      const parsed: unknown = JSON.parse(depth2Value)
+      const parsed: unknown = JSON.parse(metadataValue)
       // Sanitize: ensure it's an object
       if (typeof parsed !== 'object' || Array.isArray(parsed) || parsed === null) {
-        setDepth2Error('Depth 2 must be a JSON object')
+        setMetadataError('Metadata must be a JSON object')
         return null
       }
       // Remove prototype attacks
@@ -107,13 +98,13 @@ export function RecordForm({ mode, entity, initialData }: RecordFormProps) {
         }
         sanitized[key] = value
       }
-      setDepth2Error(undefined)
+      setMetadataError(undefined)
       return sanitized
     } catch {
-      setDepth2Error('Invalid JSON format')
+      setMetadataError('Invalid JSON format')
       return null
     }
-  }, [depth2Value])
+  }, [metadataValue])
 
   /*------------------- Handle Field Errors --------------------*/
   const setFieldErrors = (fieldErrors: Record<string, string[]>) => {
@@ -123,11 +114,11 @@ export function RecordForm({ mode, entity, initialData }: RecordFormProps) {
   }
 
   /*------------------- Handle Create Submit -------------------*/
-  const handleCreateSubmit = async (depth1Data: Depth1Values, depth2Data: Depth2Values) => {
+  const handleCreateSubmit = async (fieldValues: FieldValues, metadata: Metadata) => {
     const result = await createRecord({
       entityId: entity.id,
-      depth1Values: depth1Data,
-      depth2Values: depth2Data,
+      fieldValues,
+      metadata,
     })
 
     if (!result.success) {
@@ -143,15 +134,15 @@ export function RecordForm({ mode, entity, initialData }: RecordFormProps) {
   }
 
   /*-------------------- Handle Edit Submit --------------------*/
-  const handleEditSubmit = async (depth1Data: Depth1Values, depth2Data: Depth2Values) => {
+  const handleEditSubmit = async (fieldValues: FieldValues, metadata: Metadata) => {
     if (!initialData?.id) {
       toast.error('Record ID is missing')
       return
     }
 
     const result = await updateRecord(initialData.id, {
-      depth1Values: depth1Data,
-      depth2Values: depth2Data,
+      fieldValues,
+      metadata,
     })
 
     if (!result.success) {
@@ -167,11 +158,11 @@ export function RecordForm({ mode, entity, initialData }: RecordFormProps) {
   }
 
   /*-------------------------- Submit --------------------------*/
-  const onSubmit = (depth1Data: Record<string, unknown>) => {
-    const depth2Data = parseDepth2Value()
+  const onSubmit = (fieldValues: Record<string, unknown>) => {
+    const metadata = parseMetadata()
 
-    // Check for depth2 parsing error (invalid JSON but not empty)
-    if (depth2Value && depth2Value.trim() !== '' && depth2Error) {
+    // Check for metadata parsing error (invalid JSON but not empty)
+    if (metadataValue && metadataValue.trim() !== '' && metadataError) {
       toast.error('Please fix the JSON errors before submitting')
       return
     }
@@ -179,9 +170,9 @@ export function RecordForm({ mode, entity, initialData }: RecordFormProps) {
     startTransition(async () => {
       try {
         if (isEditMode) {
-          await handleEditSubmit(depth1Data as Depth1Values, depth2Data)
+          await handleEditSubmit(fieldValues as FieldValues, metadata)
         } else {
-          await handleCreateSubmit(depth1Data as Depth1Values, depth2Data)
+          await handleCreateSubmit(fieldValues as FieldValues, metadata)
         }
       } catch (error) {
         console.error('Form submission error:', error)
@@ -212,8 +203,8 @@ export function RecordForm({ mode, entity, initialData }: RecordFormProps) {
         </div>
       </div>
 
-      {/*--------------------- Depth 1 Section ----------------------*/}
-      <Card className={cn(themeClasses.card)} data-testid='depth1-card'>
+      {/*------------------- Field Values Section -------------------*/}
+      <Card className={cn(themeClasses.card)} data-testid='field-values-card'>
         <CardHeader>
           <CardTitle>Core Properties</CardTitle>
           <CardDescription>
@@ -221,12 +212,12 @@ export function RecordForm({ mode, entity, initialData }: RecordFormProps) {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Depth1Form form={form} FieldsSchema={entity.fields} disabled={isPending} />
+          <FieldValuesForm form={form} FieldsSchema={entity.fields} disabled={isPending} />
         </CardContent>
       </Card>
 
-      {/*--------------------- Depth 2 Section ----------------------*/}
-      <Card className={cn(themeClasses.card)} data-testid='depth2-card'>
+      {/*--------------------- Metadata Section ---------------------*/}
+      <Card className={cn(themeClasses.card)} data-testid='metadata-card'>
         <CardHeader>
           <CardTitle>Additional Details</CardTitle>
           <CardDescription>
@@ -234,12 +225,12 @@ export function RecordForm({ mode, entity, initialData }: RecordFormProps) {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Depth2Editor
-            value={depth2Value}
-            onChange={setDepth2Value}
+          <MetadataEditor
+            value={metadataValue}
+            onChange={setMetadataValue}
             disabled={isPending}
-            error={depth2Error}
-            testId='depth2-editor'
+            error={metadataError}
+            testId='metadata-editor'
           />
         </CardContent>
       </Card>

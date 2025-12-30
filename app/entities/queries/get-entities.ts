@@ -1,13 +1,11 @@
 'use server'
 
 import { db } from '@/lib/drizzle/db'
-import { entitiesTable } from '@/lib/drizzle/schema'
-
-/*----------------------- Query Result -----------------------*/
-export type QueryResult<T> = { success: true; data: T } | { success: false; error: string }
+import { entitiesTable, type EntitySchema } from '@/lib/drizzle/schema'
+import type { QueryResult } from '@/types-and-schemas/common'
 
 /*--------------------- Get All Entities ---------------------*/
-export async function getEntities(): Promise<QueryResult<(typeof entitiesTable.$inferSelect)[]>> {
+export async function getEntities(): Promise<QueryResult<EntitySchema[]>> {
   try {
     const entities = await db.select().from(entitiesTable).orderBy(entitiesTable.createdAt)
 
