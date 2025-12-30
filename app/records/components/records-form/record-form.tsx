@@ -8,12 +8,7 @@ import { toast } from 'sonner'
 import { ArrowLeft, Loader2 } from 'lucide-react'
 import Link from 'next/link'
 
-import type {
-  FieldsSchema,
-  FieldValues,
-  Metadata,
-  SelectRecordSchemaType,
-} from '@/lib/drizzle/schema'
+import type { EntitySchema, FieldValues, Metadata, RecordSchema } from '@/lib/drizzle/schema'
 import { cn } from '@/lib/utils/common-utils'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -21,21 +16,17 @@ import { Separator } from '@/components/ui/separator'
 import { createRecord } from '@/app/records/actions/create-record'
 import { updateRecord } from '@/app/records/actions/update-record'
 
-import { createFieldValuesFormSchema, getDefaultFieldValues } from './schema'
+import { createFieldValuesFormSchema, getDefaultFieldValues } from './record-form-schema'
 import { FieldValuesForm } from './field-values-form'
 import { MetadataEditor } from './metadata-editor'
 
 /*-------------------------- Types ---------------------------*/
-type EntityData = {
-  id: string
-  name: string
-  fields: FieldsSchema
-}
+type EntityData = Pick<EntitySchema, 'id' | 'name' | 'fields'>
 
 type RecordFormProps = {
   readonly mode: 'create' | 'edit'
   readonly entity: EntityData
-  readonly initialData?: SelectRecordSchemaType
+  readonly initialData?: RecordSchema
 }
 
 /*------------------------ Component -------------------------*/

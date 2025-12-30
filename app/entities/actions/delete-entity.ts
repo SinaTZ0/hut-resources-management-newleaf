@@ -2,20 +2,18 @@
 
 import { eq } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
+import { DatabaseError } from 'pg'
 
 import { db } from '@/lib/drizzle/db'
 import { entitiesTable } from '@/lib/drizzle/schema'
-
-import type { ActionResult } from './create-entity'
-
-/*------------------------ UUID Regex ------------------------*/
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+import { isValidUUID } from '@/lib/utils/common-utils'
+import type { ActionResult } from '@/types-and-schemas/common'
 
 /*---------------------- Delete Entity -----------------------*/
 export async function deleteEntity(id: string): Promise<ActionResult<{ id: string }>> {
   try {
     /*------------------------ Validation ------------------------*/
-    if (!id || typeof id !== 'string' || !UUID_REGEX.test(id)) {
+    if (!isValidUUID(id)) {
       return {
         success: false,
         error: 'Invalid entity ID',
@@ -46,19 +44,21 @@ export async function deleteEntity(id: string): Promise<ActionResult<{ id: strin
     /*---------------------- Error Handling ----------------------*/
     console.error('Delete entity error:', error)
 
-    // Handle foreign key constraint violation
-    if (error instanceof Error && error.message.includes('foreign key')) {
-      return {
-        success: false,
-        error: 'Cannot delete entity. It is referenced by other records.',
+    // Handle Postgres errors using error codes
+    if (error instanceof DatabaseError) {
+      // 23503 = foreign_key_violation
+      if (error.code === '23503') {
+        return {
+          success: false,
+          error: 'Cannot delete entity. It is referenced by other records.',
+        }
       }
-    }
-
-    // Handle database connection errors
-    if (error instanceof Error && error.message.includes('connect')) {
-      return {
-        success: false,
-        error: 'Database connection failed. Please try again later.',
+      // 08xxx = connection exceptions
+      if (error.code?.startsWith('08')) {
+        return {
+          success: false,
+          error: 'Database connection failed. Please try again later.',
+        }
       }
     }
 

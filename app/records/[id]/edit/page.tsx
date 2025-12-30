@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
 
-import { getRecordById } from '@/app/records/queries/get-record-by-id'
+import { getRecordWithEntityById } from '@/app/records/queries/get-record-with-entity-by-id'
 
 import { RecordForm } from '../../components/records-form/record-form'
 
@@ -14,7 +14,7 @@ export default async function EditRecordPage({ params }: EditRecordPageProps) {
   const { id } = await params
 
   /*----------------------- Fetch Record -----------------------*/
-  const result = await getRecordById(id)
+  const result = await getRecordWithEntityById(id)
 
   if (!result.success) {
     notFound()

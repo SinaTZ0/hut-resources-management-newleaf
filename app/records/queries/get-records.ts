@@ -4,8 +4,8 @@ import { eq, desc } from 'drizzle-orm'
 import type { Simplify } from 'type-fest'
 
 import { db } from '@/lib/drizzle/db'
-import { recordsTable, entitiesTable, type SelectRecordSchemaType } from '@/lib/drizzle/schema'
-import type { QueryResult } from '@/app/entities/queries/get-entities'
+import { recordsTable, entitiesTable, type RecordSchema } from '@/lib/drizzle/schema'
+import type { QueryResult } from '@/types-and-schemas/common'
 
 /*-------------------------- Types ---------------------------*/
 type GetRecordsOptions = {
@@ -15,7 +15,7 @@ type GetRecordsOptions = {
 }
 
 export type RecordWithEntity = Simplify<
-  SelectRecordSchemaType & {
+  RecordSchema & {
     entityName: string
   }
 >

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
-import type { RecordWithEntityDetails } from '@/app/records/queries/get-record-by-id'
+import type { RecordWithEntityDetails } from '@/app/records/queries/get-record-with-entity-by-id'
 
 import { FieldValuesDisplay } from './field-values-display'
 import { MetadataDisplay } from './metadata-display'

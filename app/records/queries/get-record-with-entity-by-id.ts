@@ -1,37 +1,33 @@
 'use server'
 
 import { eq } from 'drizzle-orm'
+import type { Simplify } from 'type-fest'
 
 import { db } from '@/lib/drizzle/db'
 import {
   recordsTable,
   entitiesTable,
   type FieldsSchema,
-  type FieldValues,
-  type Metadata,
+  type RecordSchema,
 } from '@/lib/drizzle/schema'
-import type { QueryResult } from '@/app/entities/queries/get-entities'
-
-/*------------------------ UUID Regex ------------------------*/
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+import { isValidUUID } from '@/lib/utils/common-utils'
+import type { QueryResult } from '@/types-and-schemas/common'
 
 /*-------------------------- Types ---------------------------*/
-export type RecordWithEntityDetails = {
-  id: string
-  entityId: string
-  entityName: string
-  entityFields: FieldsSchema
-  fieldValues: FieldValues
-  metadata: Metadata
-  createdAt: Date
-  updatedAt: Date
-}
+export type RecordWithEntityDetails = Simplify<
+  RecordSchema & {
+    entityName: string
+    entityFields: FieldsSchema
+  }
+>
 
 /*--------------------- Get Record By ID ---------------------*/
-export async function getRecordById(id: string): Promise<QueryResult<RecordWithEntityDetails>> {
+export async function getRecordWithEntityById(
+  id: string
+): Promise<QueryResult<RecordWithEntityDetails>> {
   try {
     /*------------------------ Validation ------------------------*/
-    if (!id || typeof id !== 'string' || !UUID_REGEX.test(id)) {
+    if (!isValidUUID(id)) {
       return {
         success: false,
         error: 'Invalid record ID provided.',

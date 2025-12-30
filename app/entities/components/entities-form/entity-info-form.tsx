@@ -2,24 +2,13 @@
 
 import { UseFormReturn } from 'react-hook-form'
 
-import { FIELD_TYPES } from '@/lib/drizzle/schema'
 import { FormInput } from '@/components/form/form-input'
 import { FormTextarea } from '@/components/form/form-textarea'
 
-type InfoFormValues = {
-  name: string
-  description?: string | null
-  fields: Array<{
-    label: string
-    type: (typeof FIELD_TYPES)[number]
-    sortable?: boolean
-    required?: boolean
-    order: number
-  }>
-}
+import { type EntityFormInputValues } from './entities-form-schema'
 
 type EntityInfoFormProps = {
-  readonly form: UseFormReturn<InfoFormValues>
+  readonly form: UseFormReturn<EntityFormInputValues>
 }
 
 /*------------------------ Component -------------------------*/

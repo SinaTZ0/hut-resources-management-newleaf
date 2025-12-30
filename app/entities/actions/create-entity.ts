@@ -1,41 +1,66 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
+import { DatabaseError } from 'pg'
 
 import { db } from '@/lib/drizzle/db'
+import { entitiesTable, insertEntitySchema, type InsertEntitySchema } from '@/lib/drizzle/schema'
 import {
-  entitiesTable,
-  InsertEntitySchema,
-  type InsertEntitySchemaType,
-} from '@/lib/drizzle/schema'
+  formatZodErrors,
+  MAX_FIELDS_PER_ENTITY,
+  type ActionResult,
+} from '@/types-and-schemas/common'
 
-/*---------------------- Action Result -----------------------*/
-export type ActionResult<T = void> =
-  | { success: true; data: T }
-  | { success: false; error: string; fieldErrors?: Record<string, string[]> }
+/*------------------------- Helpers --------------------------*/
+
+function handleDatabaseError(error: unknown): ActionResult<never> {
+  console.error('Database error:', error)
+
+  if (error instanceof DatabaseError) {
+    // 23505 = unique_violation
+    if (error.code === '23505') {
+      return {
+        success: false,
+        error: 'An entity with this name already exists',
+      }
+    }
+    // 08xxx = connection exceptions
+    if (error.code?.startsWith('08')) {
+      return {
+        success: false,
+        error: 'Database connection failed. Please try again later.',
+      }
+    }
+  }
+
+  return {
+    success: false,
+    error: 'An unexpected error occurred. Please try again.',
+  }
+}
 
 /*---------------------- Create Entity -----------------------*/
 export async function createEntity(
-  payload: InsertEntitySchemaType
+  payload: InsertEntitySchema
 ): Promise<ActionResult<{ id: string }>> {
   try {
     /*------------------------ Validation ------------------------*/
-    const parsed = InsertEntitySchema.safeParse(payload)
+    const parsed = insertEntitySchema.safeParse(payload)
 
     if (!parsed.success) {
-      const fieldErrors: Record<string, string[]> = {}
-      for (const issue of parsed.error.issues) {
-        const path = issue.path.join('.')
-        if (!(path in fieldErrors)) {
-          fieldErrors[path] = []
-        }
-        fieldErrors[path].push(issue.message)
-      }
-
       return {
         success: false,
         error: 'Validation failed',
-        fieldErrors,
+        fieldErrors: formatZodErrors(parsed.error),
+      }
+    }
+
+    /*-------------------- Input Size Limits ---------------------*/
+    const fieldCount = Object.keys(parsed.data.fields).length
+    if (fieldCount > MAX_FIELDS_PER_ENTITY) {
+      return {
+        success: false,
+        error: `Maximum ${String(MAX_FIELDS_PER_ENTITY)} fields allowed per entity`,
       }
     }
 
@@ -59,28 +84,6 @@ export async function createEntity(
       data: { id: inserted.id },
     }
   } catch (error) {
-    /*---------------------- Error Handling ----------------------*/
-    console.error('Create entity error:', error)
-
-    // Handle unique constraint violation
-    if (error instanceof Error && error.message.includes('unique')) {
-      return {
-        success: false,
-        error: 'An entity with this name already exists',
-      }
-    }
-
-    // Handle database connection errors
-    if (error instanceof Error && error.message.includes('connect')) {
-      return {
-        success: false,
-        error: 'Database connection failed. Please try again later.',
-      }
-    }
-
-    return {
-      success: false,
-      error: 'An unexpected error occurred. Please try again.',
-    }
+    return handleDatabaseError(error)
   }
 }

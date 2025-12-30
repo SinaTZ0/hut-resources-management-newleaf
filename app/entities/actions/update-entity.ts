@@ -2,43 +2,48 @@
 
 import { eq } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
+import { DatabaseError } from 'pg'
 
 import { db } from '@/lib/drizzle/db'
-import { entitiesTable, EntitySchema, type EntitySchemaType } from '@/lib/drizzle/schema'
-
-import type { ActionResult } from './create-entity'
+import { entitiesTable, insertEntitySchema, type InsertEntitySchema } from '@/lib/drizzle/schema'
+import { isValidUUID } from '@/lib/utils/common-utils'
+import {
+  formatZodErrors,
+  MAX_FIELDS_PER_ENTITY,
+  type ActionResult,
+} from '@/types-and-schemas/common'
 
 /*---------------------- Update Payload ----------------------*/
-export type UpdateEntityPayload = EntitySchemaType & { id: string }
+export type UpdateEntityPayload = InsertEntitySchema & { id: string }
 
 /*---------------------- Update Entity -----------------------*/
 export async function updateEntity(
   payload: UpdateEntityPayload
 ): Promise<ActionResult<{ id: string }>> {
   /*------------------------ Validation ------------------------*/
-  if (!payload.id || typeof payload.id !== 'string') {
+  if (!isValidUUID(payload.id)) {
     return {
       success: false,
-      error: 'Entity ID is required for update.',
+      error: 'Invalid entity ID',
     }
   }
 
-  const parsed = EntitySchema.safeParse(payload)
+  const parsed = insertEntitySchema.safeParse(payload)
 
   if (!parsed.success) {
-    const fieldErrors: Record<string, string[]> = {}
-    for (const issue of parsed.error.issues) {
-      const path = issue.path.join('.')
-      if (!(path in fieldErrors)) {
-        fieldErrors[path] = []
-      }
-      fieldErrors[path].push(issue.message)
-    }
-
     return {
       success: false,
       error: 'Validation failed',
-      fieldErrors,
+      fieldErrors: formatZodErrors(parsed.error),
+    }
+  }
+
+  /*-------------------- Input Size Limits ---------------------*/
+  const fieldCount = Object.keys(parsed.data.fields).length
+  if (fieldCount > MAX_FIELDS_PER_ENTITY) {
+    return {
+      success: false,
+      error: `Maximum ${String(MAX_FIELDS_PER_ENTITY)} fields allowed per entity`,
     }
   }
 
@@ -96,17 +101,21 @@ export async function updateEntity(
 function handleUpdateError(error: unknown): ActionResult<{ id: string }> {
   console.error('Update entity error:', error)
 
-  if (error instanceof Error && error.message.includes('unique')) {
-    return {
-      success: false,
-      error: 'An entity with this name already exists.',
+  // Handle Postgres errors using error codes
+  if (error instanceof DatabaseError) {
+    // 23505 = unique_violation
+    if (error.code === '23505') {
+      return {
+        success: false,
+        error: 'An entity with this name already exists.',
+      }
     }
-  }
-
-  if (error instanceof Error && error.message.includes('connect')) {
-    return {
-      success: false,
-      error: 'Database connection failed. Please try again later.',
+    // 08xxx = connection exceptions
+    if (error.code?.startsWith('08')) {
+      return {
+        success: false,
+        error: 'Database connection failed. Please try again later.',
+      }
     }
   }
 

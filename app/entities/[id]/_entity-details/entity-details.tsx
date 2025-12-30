@@ -4,14 +4,14 @@ import { ArrowLeft, Edit, Calendar, Hash } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
-import type { SelectEntitySchemaType } from '@/lib/drizzle/schema'
+import type { EntitySchema } from '@/lib/drizzle/schema'
 
 import { FieldsDisplay } from './fields-display'
 import { CopyIdButton } from './copy-id-button'
 
 /*------------------------ Props Type ------------------------*/
 type EntityDetailsProps = Readonly<{
-  entity: SelectEntitySchemaType
+  entity: EntitySchema
 }>
 
 /*------------------------ Component -------------------------*/

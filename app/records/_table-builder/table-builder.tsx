@@ -16,26 +16,17 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { DataTable } from '@/components/tables/data-table'
-import type { FieldsSchema } from '@/lib/drizzle/schema'
+import type { EntitySchema, RecordSchema } from '@/lib/drizzle/schema'
 
 import { generateDynamicColumns, type DynamicRecord } from './dynamic-columns'
 
 /*-------------------------- Types ---------------------------*/
-type EntityOption = {
-  id: string
-  name: string
-  description: string | null
-  fields: FieldsSchema
-}
+type EntityOption = Pick<EntitySchema, 'id' | 'name' | 'description' | 'fields'>
 
-type RecordData = {
-  id: string
-  entityId: string
-  fieldValues: Record<string, unknown>
-  metadata: Record<string, unknown> | null
-  createdAt: Date
-  updatedAt: Date
-}
+type RecordData = Pick<
+  RecordSchema,
+  'id' | 'entityId' | 'fieldValues' | 'metadata' | 'createdAt' | 'updatedAt'
+>
 
 type TableBuilderProps = {
   readonly entities: EntityOption[]
@@ -72,7 +63,7 @@ export function TableBuilder({ entities, records, defaultEntityId, testId }: Tab
   }
 
   /*------------------- Get Field Count Text -------------------*/
-  const getFieldsText = (fields: FieldsSchema) => {
+  const getFieldsText = (fields: EntityOption['fields']) => {
     const count = Object.keys(fields).length
     const sortableCount = Object.values(fields).filter((f) => f.sortable).length
     return `${String(count)} field${count !== 1 ? 's' : ''} (${String(sortableCount)} sortable)`

@@ -1,9 +1,9 @@
-import type { Metadata } from '@/lib/drizzle/schema'
+import type { RecordSchema } from '@/lib/drizzle/schema'
 import { cn } from '@/lib/utils/common-utils'
 
 /*------------------------ Props Type ------------------------*/
 type MetadataDisplayProps = Readonly<{
-  values: Metadata
+  values: RecordSchema['metadata']
   className?: string
 }>
 

@@ -28,16 +28,10 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Badge } from '@/components/ui/badge'
 import { deleteRecord } from '@/app/records/actions/delete-record'
-import type { FieldsSchema, FieldSchema, FieldValues } from '@/lib/drizzle/schema'
+import type { FieldsSchema, FieldSchema, RecordSchema } from '@/lib/drizzle/schema'
 
 /*-------------------------- Types ---------------------------*/
-export type DynamicRecord = {
-  id: string
-  fieldValues: FieldValues
-  metadata: Record<string, unknown> | null
-  createdAt: Date
-  updatedAt: Date
-}
+export type DynamicRecord = Omit<RecordSchema, 'entityId'>
 
 /*------------------------- Helpers --------------------------*/
 function handleCopyId(id: string) {

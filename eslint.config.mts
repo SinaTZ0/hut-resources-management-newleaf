@@ -8,10 +8,18 @@ import sonarjs from 'eslint-plugin-sonarjs'
 import reactHooks from 'eslint-plugin-react-hooks'
 import reactPlugin from 'eslint-plugin-react'
 import eslintPluginNext from '@next/eslint-plugin-next'
+import reactYouMightNotNeedAnEffect from 'eslint-plugin-react-you-might-not-need-an-effect'
 
 export default defineConfig([
   // Global ignores
-  globalIgnores(['.next/**', 'out/**', 'build/**', 'next-env.d.ts', 'components/ui/**']),
+  globalIgnores([
+    '.next/**',
+    'out/**',
+    'build/**',
+    'next-env.d.ts',
+    'components/ui/**',
+    '**/use-mobile.ts',
+  ]),
   // TypeScript files
   {
     name: 'ts-files',
@@ -25,6 +33,7 @@ export default defineConfig([
       reactPlugin.configs.flat.recommended,
       reactPlugin.configs.flat['jsx-runtime'],
       eslintPluginNext.configs['core-web-vitals'],
+      reactYouMightNotNeedAnEffect.configs.recommended,
 
       //typescript eslint plugins
       importPlugin.flatConfigs.typescript,
