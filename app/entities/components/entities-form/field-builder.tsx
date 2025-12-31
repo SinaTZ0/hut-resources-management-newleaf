@@ -206,7 +206,7 @@ export function FieldBuilder({ onAdd, existingKeys, mode = 'create' }: FieldBuil
         name='type'
         label='Type'
         placeholder='Select type'
-        options={FIELD_TYPES}
+        options={FIELD_TYPES.map((t) => ({ label: t, value: t }))}
         testId='builder-type'
       />
 

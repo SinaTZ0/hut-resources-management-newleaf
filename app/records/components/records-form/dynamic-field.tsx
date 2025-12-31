@@ -72,7 +72,7 @@ export function DynamicField<
           name={fieldKey}
           label={label}
           placeholder={`Select ${fieldDef.label.toLowerCase()}`}
-          options={fieldDef.enumOptions ?? []}
+          options={(fieldDef.enumOptions ?? []).map((opt) => ({ label: opt, value: opt }))}
           disabled={disabled}
           testId={testId ?? `field-${fieldKey}`}
         />
