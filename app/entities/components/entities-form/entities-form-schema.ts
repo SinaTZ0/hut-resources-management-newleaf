@@ -1,4 +1,4 @@
-import { z } from 'zod'
+import { z } from 'zod/v4'
 
 import { entitySchema, FIELD_TYPES, enumOptionsSchema, type FieldValue } from '@/lib/drizzle/schema'
 
