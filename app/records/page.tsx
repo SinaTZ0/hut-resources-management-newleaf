@@ -10,6 +10,7 @@ import { getRecords } from './queries/get-records'
 import { getEntitiesWithFields } from './queries/get-entities-with-fields'
 import { RecordsTable } from './_all-records-table/records-table'
 import { TableBuilder } from './_table-builder/table-builder'
+import { CreateRecordDropdown } from './_create-record-dropdown/create-record-dropdown'
 
 /*------------------------- Helpers --------------------------*/
 function getRecordCountText(count: number): string {
@@ -34,12 +35,21 @@ export default async function RecordsPage() {
               Manage your resource records across all entity types.
             </p>
           </div>
-          <Button asChild data-testid='create-record-btn'>
-            <Link href='/records/create'>
-              <Plus className='mr-2 h-4 w-4' />
-              Create Record
-            </Link>
-          </Button>
+          {entitiesResult.success && entitiesResult.data.length > 0 && (
+            <CreateRecordDropdown
+              entities={entitiesResult.data.map((e) => ({
+                id: e.id,
+                name: e.name,
+                description: e.description,
+              }))}
+              testId='create-record-dropdown'
+            />
+          )}
+          {entitiesResult.success && entitiesResult.data.length === 0 && (
+            <Button asChild data-testid='create-entity-btn'>
+              <Link href='/entities/create'>Create Entity First</Link>
+            </Button>
+          )}
         </div>
 
         {/*-------------------------- Error ---------------------------*/}
