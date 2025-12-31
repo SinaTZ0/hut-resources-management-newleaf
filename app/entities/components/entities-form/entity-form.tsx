@@ -10,6 +10,7 @@ import Link from 'next/link'
 
 import {
   type FieldSchema,
+  type FieldValue,
   type EntitySchema,
   type InsertEntitySchema,
   insertEntitySchema,
@@ -52,6 +53,7 @@ export function CreateAndUpdateEntityForm({ mode, initialData }: EntityFormProps
         sortable: field.sortable,
         required: field.required,
         order: field.order,
+        enumOptions: field.type === 'enum' ? field.enumOptions : undefined,
       }))
       .sort((a, b) => a.order - b.order)
   }
@@ -105,6 +107,7 @@ export function CreateAndUpdateEntityForm({ mode, initialData }: EntityFormProps
     ...f,
     sortable: f.sortable ?? true,
     required: f.required ?? false,
+    enumOptions: f.type === 'enum' ? f.enumOptions : undefined,
   }))
   const fieldsError = form.formState.errors.fields?.message
 
@@ -121,8 +124,33 @@ export function CreateAndUpdateEntityForm({ mode, initialData }: EntityFormProps
 
   /*-------------------------- Submit --------------------------*/
   const onSubmit = (data: EntityFormValues) => {
+    /*----------- Validate Unique Generated Field Keys -----------*/
+    const fieldKeys = data.fields.map((f) => toSnakeCase(f.label))
+    const emptyKeys = fieldKeys.filter((k) => !k)
+    if (emptyKeys.length > 0) {
+      form.setError('fields', {
+        message: 'One or more field labels produce an invalid key. Please update the labels.',
+      })
+      toast.error('Invalid field label detected. Please update the label(s).')
+      return
+    }
+
+    const duplicateKeys = fieldKeys.filter((key, idx) => fieldKeys.indexOf(key) !== idx)
+    if (duplicateKeys.length > 0) {
+      const uniqueDuplicates = Array.from(new Set(duplicateKeys))
+      form.setError('fields', {
+        message: `Duplicate field keys detected: ${uniqueDuplicates.join(', ')}`,
+      })
+      toast.error('Duplicate field labels detected. Please make them unique.')
+      return
+    }
+
+    form.clearErrors('fields')
+
     /*--------------- Transform to array to record ---------------*/
     const fields: Record<string, FieldSchema> = {}
+    const defaultValues: Record<string, FieldValue> = {}
+
     data.fields.forEach((f, idx) => {
       const key: string = toSnakeCase(f.label)
       fields[key] = {
@@ -131,6 +159,12 @@ export function CreateAndUpdateEntityForm({ mode, initialData }: EntityFormProps
         sortable: f.sortable,
         required: f.required,
         order: idx,
+        enumOptions: f.type === 'enum' ? f.enumOptions : undefined,
+      }
+
+      // Collect default values for new required fields (edit mode only)
+      if (isEditMode && f.required && f.defaultValue !== undefined) {
+        defaultValues[key] = f.defaultValue
       }
     })
 
@@ -143,7 +177,6 @@ export function CreateAndUpdateEntityForm({ mode, initialData }: EntityFormProps
 
     const result = insertEntitySchema.safeParse(payload)
     if (!result.success) {
-      console.error('Entity validation failed:', result.error)
       toast.error('Validation failed. Please check your input.')
       return
     }
@@ -156,6 +189,7 @@ export function CreateAndUpdateEntityForm({ mode, initialData }: EntityFormProps
         actionResult = await updateEntity({
           ...result.data,
           id: initialData.id,
+          defaultValues: Object.keys(defaultValues).length > 0 ? defaultValues : undefined,
         })
       } else {
         actionResult = await createEntity(result.data)
@@ -234,7 +268,7 @@ export function CreateAndUpdateEntityForm({ mode, initialData }: EntityFormProps
               )}
             >
               <CardContent>
-                <FieldBuilder onAdd={handleAddField} existingKeys={existingKeys} />
+                <FieldBuilder onAdd={handleAddField} existingKeys={existingKeys} mode={mode} />
               </CardContent>
             </Card>
             {fieldsError && (

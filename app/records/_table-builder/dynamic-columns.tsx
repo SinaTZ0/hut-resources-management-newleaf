@@ -61,6 +61,9 @@ function formatFieldValue(value: unknown, fieldType: FieldSchema['type']): strin
       return value === true || value === 'true' || value === 1 ? 'Yes' : 'No'
     case 'number':
       return typeof value === 'number' ? value.toLocaleString() : String(value as string | number)
+    case 'enum':
+      // Return enum value as-is (it's already a string)
+      return typeof value === 'string' && value.length > 0 ? value : '—'
     case 'string':
     default:
       if (typeof value === 'object') return JSON.stringify(value)

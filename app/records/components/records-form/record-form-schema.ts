@@ -19,6 +19,17 @@ function createFieldSchema(field: FieldSchema): z.ZodType {
     case 'date':
       schema = z.coerce.date({ error: `${field.label} must be a valid date` })
       break
+    case 'enum':
+      if (field.enumOptions && field.enumOptions.length > 0) {
+        // Create enum schema from options
+        const [first, ...rest] = field.enumOptions
+        schema = z.enum([first, ...rest], {
+          error: `${field.label} must be one of: ${field.enumOptions.join(', ')}`,
+        })
+      } else {
+        schema = z.string()
+      }
+      break
     default:
       schema = z.string()
   }
@@ -26,7 +37,7 @@ function createFieldSchema(field: FieldSchema): z.ZodType {
   /*----------------- Apply Required/Optional ------------------*/
   if (!field.required) {
     // For optional fields, allow null/undefined and empty strings
-    if (field.type === 'string') {
+    if (field.type === 'string' || field.type === 'enum') {
       schema = z.string().optional().or(z.literal(''))
     } else {
       schema = schema.nullable().optional()
@@ -70,6 +81,10 @@ export function getDefaultFieldValues(FieldsSchema: FieldsSchemaType): Record<st
         break
       case 'date':
         defaults[key] = null
+        break
+      case 'enum':
+        // Default to empty string (no selection) or first option if required
+        defaults[key] = ''
         break
       default:
         defaults[key] = ''
