@@ -52,55 +52,75 @@ function SortableFieldItem({
   return (
     <div ref={setNodeRef} style={style} className='mb-2'>
       <Card className='py-2 bg-card-foreground/5'>
-        <CardContent className='flex flex-row justify-between w-full'>
-          <div className='flex flex-row items-center'>
-            {/*----------------------- Drag Handle ------------------------*/}
-            <div
-              {...attributes}
-              {...listeners}
-              className='cursor-grab active:cursor-grabbing text-muted-foreground/50 hover:text-foreground'
-            >
-              <GripVertical className='size-8 -ml-5' />
+        <CardContent className='flex flex-col gap-2 w-full'>
+          {/*------------------------- Top Row --------------------------*/}
+          <div className='flex flex-row justify-between w-full'>
+            <div className='flex flex-row items-center'>
+              {/*----------------------- Drag Handle ------------------------*/}
+              <div
+                {...attributes}
+                {...listeners}
+                className='cursor-grab active:cursor-grabbing text-muted-foreground/50 hover:text-foreground'
+              >
+                <GripVertical className='size-8 -ml-5' />
+              </div>
+              {/*----------------------- Label & Key ------------------------*/}
+              <div className='flex flex-col'>
+                <span className='font-medium truncate'>{field.label}</span>
+                <span className='font-mono text-xs text-muted-foreground truncate'>
+                  {toSnakeCase(field.label)}
+                </span>
+              </div>
             </div>
-            {/*----------------------- Label & Key ------------------------*/}
-            <div className='flex flex-col'>
-              <span className='font-medium truncate'>{field.label}</span>
-              <span className='font-mono text-xs text-muted-foreground truncate'>
-                {toSnakeCase(field.label)}
-              </span>
+
+            <div className='flex flex-row gap-2 items-center '>
+              <div className='flex flex-col sm:flex-row gap-1 items-center'>
+                {/*--------------------------- Type ---------------------------*/}
+                <Badge variant='secondary' className='rounded-sm font-normal'>
+                  {field.type}
+                </Badge>
+                {/*------------------------ Attributes ------------------------*/}
+                {field.required && (
+                  <Badge variant='outline' className='text-xs'>
+                    Required
+                  </Badge>
+                )}
+                {field.sortable && (
+                  <Badge variant='outline' className='text-xs'>
+                    Sortable
+                  </Badge>
+                )}
+              </div>
+              {/*------------------------- Actions --------------------------*/}
+              <Button
+                type='button'
+                variant='ghost'
+                size='icon'
+                className='h-8 w-8 text-muted-foreground hover:text-destructive shrink-0'
+                onClick={onRemove}
+                data-testid={`saved-remove-${toSnakeCase(field.label)}`}
+              >
+                <Trash2 className='size-4' />
+              </Button>
             </div>
           </div>
 
-          <div className='flex flex-row gap-2 items-center '>
-            <div className='flex flex-col sm:flex-row gap-1 items-center'>
-              {/*--------------------------- Type ---------------------------*/}
-              <Badge variant='secondary' className='rounded-sm font-normal'>
-                {field.type}
-              </Badge>
-              {/*------------------------ Attributes ------------------------*/}
-              {field.required && (
-                <Badge variant='outline' className='text-xs'>
-                  Required
+          {/*--------------------- Enum Options Row ---------------------*/}
+          {field.type === 'enum' && field.enumOptions && field.enumOptions.length > 0 && (
+            <div className='flex flex-wrap gap-1 pl-3 pt-1 border-t border-dashed'>
+              <span className='text-xs text-muted-foreground mr-1'>Options:</span>
+              {field.enumOptions.map((option) => (
+                <Badge
+                  key={option}
+                  variant='outline'
+                  className='text-xs font-normal'
+                  data-testid={`enum-option-${toSnakeCase(field.label)}-${option}`}
+                >
+                  {option}
                 </Badge>
-              )}
-              {field.sortable && (
-                <Badge variant='outline' className='text-xs'>
-                  Sortable
-                </Badge>
-              )}
+              ))}
             </div>
-            {/*------------------------- Actions --------------------------*/}
-            <Button
-              type='button'
-              variant='ghost'
-              size='icon'
-              className='h-8 w-8 text-muted-foreground hover:text-destructive shrink-0'
-              onClick={onRemove}
-              data-testid={`saved-remove-${toSnakeCase(field.label)}`}
-            >
-              <Trash2 className='size-4' />
-            </Button>
-          </div>
+          )}
         </CardContent>
       </Card>
     </div>

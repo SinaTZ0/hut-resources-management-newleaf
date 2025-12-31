@@ -40,6 +40,9 @@ function formatValue(value: unknown, type: string): string {
       } catch {
         return String(primitiveValue)
       }
+    case 'enum':
+      // Return enum value as-is
+      return typeof primitiveValue === 'string' && primitiveValue.length > 0 ? primitiveValue : '—'
     case 'number':
     case 'string':
     default:

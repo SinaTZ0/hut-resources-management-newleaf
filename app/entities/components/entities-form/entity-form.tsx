@@ -52,6 +52,7 @@ export function CreateAndUpdateEntityForm({ mode, initialData }: EntityFormProps
         sortable: field.sortable,
         required: field.required,
         order: field.order,
+        enumOptions: field.type === 'enum' ? field.enumOptions : undefined,
       }))
       .sort((a, b) => a.order - b.order)
   }
@@ -105,6 +106,7 @@ export function CreateAndUpdateEntityForm({ mode, initialData }: EntityFormProps
     ...f,
     sortable: f.sortable ?? true,
     required: f.required ?? false,
+    enumOptions: f.type === 'enum' ? f.enumOptions : undefined,
   }))
   const fieldsError = form.formState.errors.fields?.message
 
@@ -121,6 +123,8 @@ export function CreateAndUpdateEntityForm({ mode, initialData }: EntityFormProps
 
   /*-------------------------- Submit --------------------------*/
   const onSubmit = (data: EntityFormValues) => {
+    console.dir(data)
+
     /*--------------- Transform to array to record ---------------*/
     const fields: Record<string, FieldSchema> = {}
     data.fields.forEach((f, idx) => {
@@ -131,6 +135,7 @@ export function CreateAndUpdateEntityForm({ mode, initialData }: EntityFormProps
         sortable: f.sortable,
         required: f.required,
         order: idx,
+        enumOptions: f.type === 'enum' ? f.enumOptions : undefined,
       }
     })
 
@@ -140,7 +145,7 @@ export function CreateAndUpdateEntityForm({ mode, initialData }: EntityFormProps
       description: data.description,
       fields,
     }
-
+    console.dir(payload)
     const result = insertEntitySchema.safeParse(payload)
     if (!result.success) {
       console.error('Entity validation failed:', result.error)

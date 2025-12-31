@@ -3,17 +3,42 @@ import { z } from 'zod/v4'
 import type { IsEqual } from 'type-fest'
 
 /*------------------------ Field Type ------------------------*/
-export const FIELD_TYPES = ['string', 'number', 'date', 'boolean'] as const
+export const FIELD_TYPES = ['string', 'number', 'date', 'boolean', 'enum'] as const
 export type FieldType = (typeof FIELD_TYPES)[number]
 
+/*----------------------- Enum Options -----------------------*/
+export const enumOptionsSchema = z
+  .array(z.string().min(1, { message: 'Enum option cannot be empty' }))
+  .min(1, { message: 'At least one enum option is required' })
+  .refine((arr) => new Set(arr).size === arr.length, {
+    message: 'Enum options must be unique',
+  })
+
+export type EnumOptions = z.output<typeof enumOptionsSchema>
+
 /*----------------------- Field Schema -----------------------*/
-export const fieldSchema = z.strictObject({
+const baseFieldSchema = z.strictObject({
   type: z.enum(FIELD_TYPES),
   label: z.string().min(1, { message: 'Field label is required' }),
   sortable: z.boolean().default(true),
   required: z.boolean().default(false),
   order: z.number().int().min(0, { message: 'Order must be a non-negative integer' }),
+  enumOptions: enumOptionsSchema.optional(),
 })
+
+// Ensure enumOptions is required when type is 'enum'
+export const fieldSchema = baseFieldSchema.refine(
+  (field) => {
+    if (field.type === 'enum') {
+      return field.enumOptions !== undefined && field.enumOptions.length > 0
+    }
+    return true
+  },
+  {
+    message: 'Enum options are required for enum type fields',
+    path: ['enumOptions'],
+  }
+)
 
 export type FieldSchema = z.output<typeof fieldSchema>
 export type FieldSchemaInput = z.input<typeof fieldSchema>

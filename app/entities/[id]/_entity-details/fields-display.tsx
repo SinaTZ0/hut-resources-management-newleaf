@@ -22,6 +22,7 @@ const TYPE_BADGE_VARIANTS: Record<FieldType, { variant: 'default' | 'secondary' 
   number: { variant: 'secondary' },
   date: { variant: 'outline' },
   boolean: { variant: 'secondary' },
+  enum: { variant: 'default' },
 }
 
 /*------------------------ Component -------------------------*/
@@ -50,6 +51,7 @@ export function FieldsDisplay({ fields }: FieldsDisplayProps) {
             <TableHead>Field Key</TableHead>
             <TableHead>Label</TableHead>
             <TableHead>Type</TableHead>
+            <TableHead>Options</TableHead>
             <TableHead className='text-center'>Required</TableHead>
             <TableHead className='text-center'>Sortable</TableHead>
           </TableRow>
@@ -73,6 +75,21 @@ export function FieldsDisplay({ fields }: FieldsDisplayProps) {
               {/*--------------------------- Type ---------------------------*/}
               <TableCell>
                 <Badge variant={TYPE_BADGE_VARIANTS[field.type].variant}>{field.type}</Badge>
+              </TableCell>
+
+              {/*----------------------- Enum Options -----------------------*/}
+              <TableCell>
+                {field.type === 'enum' && field.enumOptions ? (
+                  <div className='flex flex-wrap gap-1'>
+                    {field.enumOptions.map((option) => (
+                      <Badge key={option} variant='outline' className='text-xs'>
+                        {option}
+                      </Badge>
+                    ))}
+                  </div>
+                ) : (
+                  <span className='text-muted-foreground'>—</span>
+                )}
               </TableCell>
 
               {/*------------------------- Required -------------------------*/}

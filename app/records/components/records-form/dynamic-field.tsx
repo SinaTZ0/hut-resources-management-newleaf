@@ -5,6 +5,7 @@ import type { FieldPath, FieldValues, UseFormReturn } from 'react-hook-form'
 import type { FieldSchema } from '@/lib/drizzle/schema'
 import { FormInput } from '@/components/form/form-input'
 import { FormSwitch } from '@/components/form/form-switch'
+import { FormSelect } from '@/components/form/form-select'
 import { FormDatePicker } from '@/components/form/form-date-picker'
 
 /*-------------------------- Types ---------------------------*/
@@ -59,6 +60,19 @@ export function DynamicField<
           form={form}
           name={fieldKey}
           label={label}
+          disabled={disabled}
+          testId={testId ?? `field-${fieldKey}`}
+        />
+      )
+
+    case 'enum':
+      return (
+        <FormSelect
+          form={form}
+          name={fieldKey}
+          label={label}
+          placeholder={`Select ${fieldDef.label.toLowerCase()}`}
+          options={fieldDef.enumOptions ?? []}
           disabled={disabled}
           testId={testId ?? `field-${fieldKey}`}
         />
