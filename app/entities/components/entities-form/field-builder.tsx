@@ -7,6 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { X, Plus, AlertTriangle } from 'lucide-react'
 
 import { FIELD_TYPES, enumOptionsSchema, type FieldValue } from '@/lib/drizzle/schema'
+import { toSnakeCase } from '@/lib/utils/common-utils'
 import { Button } from '@/components/ui/button'
 import { FormInput } from '@/components/form/form-input'
 import { FormSelect } from '@/components/form/form-select'
@@ -51,16 +52,11 @@ type BuilderFormValues = z.infer<typeof builderFormSchema>
 
 /*--------- Helper: Resolve Default Value for Field ----------*/
 function resolveDefaultValue(values: BuilderFormValues): FieldValue | undefined {
-  // For enum fields, use the selected default value from form
+  // For enum fields, require the user to explicitly select a default value.
   if (values.type === 'enum' && values.enumOptions && values.enumOptions.length > 0) {
-    // Use selected defaultValue if it's a valid option, otherwise use first option
-    if (
-      typeof values.defaultValue === 'string' &&
-      values.enumOptions.includes(values.defaultValue)
-    ) {
-      return values.defaultValue
-    }
-    return values.enumOptions[0]
+    if (typeof values.defaultValue !== 'string') return undefined
+    if (!values.enumOptions.includes(values.defaultValue)) return undefined
+    return values.defaultValue
   }
 
   // No default value provided
@@ -100,7 +96,7 @@ export function FieldBuilder({ onAdd, existingKeys, mode = 'create' }: FieldBuil
     },
   })
 
-  const { handleSubmit, reset, setValue, control } = form
+  const { handleSubmit, reset, setValue, setError, clearErrors, control } = form
 
   /*----------------------- Watch Fields -----------------------*/
   const selectedType = useWatch({ control, name: 'type' })
@@ -142,8 +138,34 @@ export function FieldBuilder({ onAdd, existingKeys, mode = 'create' }: FieldBuil
 
   /*------------------------- Handlers -------------------------*/
   const onSubmit = (values: BuilderFormValues) => {
+    const key = toSnakeCase(values.label)
+    if (!key) {
+      setError('label', { message: 'Label must generate a valid key' })
+      return
+    }
+
+    if (existingKeys.includes(key)) {
+      setError('label', { message: `A field with key "${key}" already exists` })
+      return
+    }
+
     const shouldIncludeDefault = isEditMode && values.required
     const defaultValue = shouldIncludeDefault ? resolveDefaultValue(values) : undefined
+
+    if (shouldIncludeDefault) {
+      const isMissingDefault = defaultValue === undefined || defaultValue === null
+      if (isMissingDefault) {
+        setError('defaultValue', {
+          message:
+            values.type === 'enum'
+              ? 'Default value is required. Please select an option.'
+              : 'Default value is required when field is marked as required',
+        })
+        return
+      }
+    }
+
+    clearErrors(['label', 'defaultValue'])
 
     onAdd({
       ...values,

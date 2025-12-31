@@ -124,6 +124,29 @@ export function CreateAndUpdateEntityForm({ mode, initialData }: EntityFormProps
 
   /*-------------------------- Submit --------------------------*/
   const onSubmit = (data: EntityFormValues) => {
+    /*----------- Validate Unique Generated Field Keys -----------*/
+    const fieldKeys = data.fields.map((f) => toSnakeCase(f.label))
+    const emptyKeys = fieldKeys.filter((k) => !k)
+    if (emptyKeys.length > 0) {
+      form.setError('fields', {
+        message: 'One or more field labels produce an invalid key. Please update the labels.',
+      })
+      toast.error('Invalid field label detected. Please update the label(s).')
+      return
+    }
+
+    const duplicateKeys = fieldKeys.filter((key, idx) => fieldKeys.indexOf(key) !== idx)
+    if (duplicateKeys.length > 0) {
+      const uniqueDuplicates = Array.from(new Set(duplicateKeys))
+      form.setError('fields', {
+        message: `Duplicate field keys detected: ${uniqueDuplicates.join(', ')}`,
+      })
+      toast.error('Duplicate field labels detected. Please make them unique.')
+      return
+    }
+
+    form.clearErrors('fields')
+
     /*--------------- Transform to array to record ---------------*/
     const fields: Record<string, FieldSchema> = {}
     const defaultValues: Record<string, FieldValue> = {}

@@ -3,6 +3,7 @@
 import { eq } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import { DatabaseError } from 'pg'
+import { z } from 'zod/v4'
 
 import { db } from '@/lib/drizzle/db'
 import {
@@ -56,24 +57,135 @@ function applyDefaultsToRecord(
   return { updated, needsUpdate }
 }
 
-/*------------ Helper: Get New Enum Fields with Defaults -----------*/
-function getNewEnumFieldsWithDefaults(
-  fields: FieldsSchema,
+function isMissingRequiredDefaultValue(value: FieldValue | undefined): boolean {
+  if (value === undefined || value === null) return true
+  if (typeof value === 'string' && value.trim() === '') return true
+  return false
+}
+
+function parseDefaultValueByFieldType(args: {
+  fieldType: FieldsSchema[string]['type']
+  raw: FieldValue | undefined
+}): FieldValue | null {
+  const { fieldType, raw } = args
+
+  if (raw === undefined) return null
+
+  switch (fieldType) {
+    case 'string': {
+      const parsed = z.string().safeParse(raw)
+      return parsed.success ? parsed.data : null
+    }
+    case 'number': {
+      const parsed = z.number().safeParse(raw)
+      return parsed.success ? parsed.data : null
+    }
+    case 'boolean': {
+      const parsed = z.boolean().safeParse(raw)
+      return parsed.success ? parsed.data : null
+    }
+    case 'date': {
+      const parsed = z.coerce.date().safeParse(raw)
+      return parsed.success ? parsed.data : null
+    }
+    case 'enum':
+      return null
+    default:
+      return null
+  }
+}
+
+type BackfillDecision =
+  | { kind: 'enumDefault'; value: FieldValue }
+  | { kind: 'sanitized'; value: FieldValue }
+  | { kind: 'missing' }
+  | { kind: 'invalid' }
+
+function getBackfillDecisionForNewRequiredField(args: {
+  field: FieldsSchema[string]
+  raw: FieldValue | undefined
+}): BackfillDecision {
+  const { field, raw } = args
+
+  if (field.type === 'enum') {
+    const enumOptions = field.enumOptions
+    if (!enumOptions || enumOptions.length === 0) return { kind: 'missing' }
+    if (isMissingRequiredDefaultValue(raw)) return { kind: 'missing' }
+    if (typeof raw !== 'string') return { kind: 'invalid' }
+    if (!enumOptions.includes(raw)) return { kind: 'invalid' }
+    return { kind: 'enumDefault', value: raw }
+  }
+
+  if (isMissingRequiredDefaultValue(raw)) {
+    return { kind: 'missing' }
+  }
+
+  const parsedValue = parseDefaultValueByFieldType({ fieldType: field.type, raw })
+  if (parsedValue === null) {
+    return { kind: 'invalid' }
+  }
+
+  return { kind: 'sanitized', value: parsedValue }
+}
+
+/*------- Helper: Validate and Sanitize Defaults for Backfill -------*/
+function sanitizeDefaultsForNewRequiredFields(args: {
+  fields: FieldsSchema
   existingFieldKeys: Set<string>
-): Array<[string, FieldValue]> {
-  const result: Array<[string, FieldValue]> = []
+  rawDefaultValues?: Record<string, FieldValue>
+}):
+  | {
+      success: true
+      sanitizedDefaultValues: Record<string, FieldValue>
+      newEnumFields: Array<[string, FieldValue]>
+    }
+  | { success: false; error: string } {
+  const { fields, existingFieldKeys, rawDefaultValues } = args
+
+  const newEnumFields: Array<[string, FieldValue]> = []
+  const sanitizedDefaultValues: Record<string, FieldValue> = {}
+  const missingDefaults: string[] = []
+  const invalidDefaults: string[] = []
 
   for (const [fieldKey, field] of Object.entries(fields)) {
-    const hasEnumOptions = field.enumOptions && field.enumOptions.length > 0
-    const isNewRequiredEnum =
-      field.required && field.type === 'enum' && hasEnumOptions && !existingFieldKeys.has(fieldKey)
+    if (!field.required || existingFieldKeys.has(fieldKey)) continue
 
-    if (isNewRequiredEnum && field.enumOptions) {
-      result.push([fieldKey, field.enumOptions[0]])
+    const decision = getBackfillDecisionForNewRequiredField({
+      field,
+      raw: rawDefaultValues?.[fieldKey],
+    })
+
+    switch (decision.kind) {
+      case 'enumDefault':
+        newEnumFields.push([fieldKey, decision.value])
+        break
+      case 'sanitized':
+        sanitizedDefaultValues[fieldKey] = decision.value
+        break
+      case 'missing':
+        missingDefaults.push(fieldKey)
+        break
+      case 'invalid':
+        invalidDefaults.push(fieldKey)
+        break
     }
   }
 
-  return result
+  if (missingDefaults.length > 0) {
+    return {
+      success: false,
+      error: `Default values are required for new required fields: ${missingDefaults.join(', ')}`,
+    }
+  }
+
+  if (invalidDefaults.length > 0) {
+    return {
+      success: false,
+      error: `Invalid default values provided for fields: ${invalidDefaults.join(', ')}`,
+    }
+  }
+
+  return { success: true, sanitizedDefaultValues, newEnumFields }
 }
 
 /*---------------------- Update Entity -----------------------*/
@@ -113,19 +225,6 @@ export async function updateEntity(
     }
   }
 
-  /*---------- Validate Required Fields Have Defaults ----------*/
-  const requiredFieldsWithoutDefaults = Object.entries(parsed.data.fields)
-    .filter(([key, field]) => {
-      if (!field.required) return false
-      // Enum fields use first option as default
-      if (field.type === 'enum' && field.enumOptions && field.enumOptions.length > 0) return false
-      // Check if default value is provided
-      return payload.defaultValues?.[key] === undefined
-    })
-    .map(([key]) => key)
-
-  // Note: We only need defaults for NEW required fields, which we'll determine below
-
   try {
     /*------------------- Check Entity Exists --------------------*/
     const existing = await db
@@ -144,15 +243,17 @@ export async function updateEntity(
     const existingFields = existing[0].fields
     const existingFieldKeys = new Set(Object.keys(existingFields))
 
-    /*----------- Identify New Required Fields Without Defaults -----------*/
-    const newRequiredFieldsNeedingDefaults = requiredFieldsWithoutDefaults.filter(
-      (key) => !existingFieldKeys.has(key)
-    )
+    /*-------- Validate + sanitize defaults for backfill --------*/
+    const defaultsResult = sanitizeDefaultsForNewRequiredFields({
+      fields: parsed.data.fields,
+      existingFieldKeys,
+      rawDefaultValues: payload.defaultValues,
+    })
 
-    if (newRequiredFieldsNeedingDefaults.length > 0) {
+    if (!defaultsResult.success) {
       return {
         success: false,
-        error: `Default values are required for new required fields: ${newRequiredFieldsNeedingDefaults.join(', ')}`,
+        error: defaultsResult.error,
       }
     }
 
@@ -174,11 +275,9 @@ export async function updateEntity(
         throw new Error('Failed to update entity.')
       }
 
-      /*---------- Get new enum fields that need defaults ----------*/
-      const newEnumFields = getNewEnumFieldsWithDefaults(parsed.data.fields, existingFieldKeys)
       const hasDefaultsToApply =
-        (payload.defaultValues && Object.keys(payload.defaultValues).length > 0) ||
-        newEnumFields.length > 0
+        Object.keys(defaultsResult.sanitizedDefaultValues).length > 0 ||
+        defaultsResult.newEnumFields.length > 0
 
       /*--------- Update Records with Default Values for New Fields ---------*/
       if (hasDefaultsToApply) {
@@ -190,8 +289,8 @@ export async function updateEntity(
         for (const record of records) {
           const { updated, needsUpdate } = applyDefaultsToRecord(
             record.fieldValues,
-            payload.defaultValues ?? {},
-            newEnumFields
+            defaultsResult.sanitizedDefaultValues,
+            defaultsResult.newEnumFields
           )
 
           if (needsUpdate) {
