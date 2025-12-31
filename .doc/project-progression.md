@@ -51,14 +51,14 @@ Flexible Resource Manager - A Next.js application for managing dynamic resources
   - Default Value input appears in FieldBuilder when adding a required field (edit mode only)
   - Warning description: "This value will be applied to all existing records"
   - Support for all field types: string, number, boolean, date
-- [x] **Enum fields automatic default**
-  - First option is automatically picked as default for enum fields
-  - Warning note displayed: "The first option will be picked as the default value"
+- [x] **Enum fields default selection**
+  - Users must explicitly select a default value for enum fields when adding required enum fields in edit mode
+  - Warning note displayed: "The selected default value will be applied to all existing records"
 - [x] **Update entity action with transaction**
   - Uses Drizzle transaction to atomically update entity and records
   - Validates that new required fields have default values
   - Updates all existing records with default values for new required fields
-  - Enum fields use first option as default automatically
+  - Enum fields require an explicitly selected default value; no automatic first-option default is applied
 
 ## Upcoming Features
 
