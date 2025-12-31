@@ -3,7 +3,7 @@ import { Geist, Geist_Mono } from 'next/font/google'
 
 import './globals.css'
 import { ThemeProvider } from '@/components/theme/theme-provider'
-import { ModeToggle } from '@/components/theme/theme-toggle'
+import { Navbar } from '@/components/navbar/navbar'
 import { Toaster } from '@/components/ui/sonner'
 
 const geistSans = Geist({
@@ -35,10 +35,10 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <div className='absolute top-4 right-4'>
-            <ModeToggle />
+          <div className='relative flex min-h-screen flex-col'>
+            <Navbar />
+            <main className='flex-1'>{children}</main>
           </div>
-          {children}
           <Toaster richColors position='bottom-center' />
         </ThemeProvider>
       </body>
