@@ -10,6 +10,7 @@ import Link from 'next/link'
 
 import {
   type FieldSchema,
+  type FieldValue,
   type EntitySchema,
   type InsertEntitySchema,
   insertEntitySchema,
@@ -123,10 +124,10 @@ export function CreateAndUpdateEntityForm({ mode, initialData }: EntityFormProps
 
   /*-------------------------- Submit --------------------------*/
   const onSubmit = (data: EntityFormValues) => {
-    console.dir(data)
-
     /*--------------- Transform to array to record ---------------*/
     const fields: Record<string, FieldSchema> = {}
+    const defaultValues: Record<string, FieldValue> = {}
+
     data.fields.forEach((f, idx) => {
       const key: string = toSnakeCase(f.label)
       fields[key] = {
@@ -137,6 +138,11 @@ export function CreateAndUpdateEntityForm({ mode, initialData }: EntityFormProps
         order: idx,
         enumOptions: f.type === 'enum' ? f.enumOptions : undefined,
       }
+
+      // Collect default values for new required fields (edit mode only)
+      if (isEditMode && f.required && f.defaultValue !== undefined) {
+        defaultValues[key] = f.defaultValue
+      }
     })
 
     /*---------------- Build payload and validate ----------------*/
@@ -145,10 +151,9 @@ export function CreateAndUpdateEntityForm({ mode, initialData }: EntityFormProps
       description: data.description,
       fields,
     }
-    console.dir(payload)
+
     const result = insertEntitySchema.safeParse(payload)
     if (!result.success) {
-      console.error('Entity validation failed:', result.error)
       toast.error('Validation failed. Please check your input.')
       return
     }
@@ -161,6 +166,7 @@ export function CreateAndUpdateEntityForm({ mode, initialData }: EntityFormProps
         actionResult = await updateEntity({
           ...result.data,
           id: initialData.id,
+          defaultValues: Object.keys(defaultValues).length > 0 ? defaultValues : undefined,
         })
       } else {
         actionResult = await createEntity(result.data)
@@ -239,7 +245,7 @@ export function CreateAndUpdateEntityForm({ mode, initialData }: EntityFormProps
               )}
             >
               <CardContent>
-                <FieldBuilder onAdd={handleAddField} existingKeys={existingKeys} />
+                <FieldBuilder onAdd={handleAddField} existingKeys={existingKeys} mode={mode} />
               </CardContent>
             </Card>
             {fieldsError && (

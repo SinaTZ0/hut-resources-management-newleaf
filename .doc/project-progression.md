@@ -38,41 +38,50 @@ Flexible Resource Manager - A Next.js application for managing dynamic resources
 - [x] Record edit functionality
 - [x] Entity selector for record creation
 
----
+### Phase 4: Field Type Enhancements ✅
 
-## Current Sprint
-
-### Phase 4: Field Type Enhancements 🚧
-
-- [ ] **Enum field type support** (in progress)
+- [x] **Enum field type support**
   - Enum options definition in entity fields
   - Enum selection input in record forms
   - Enum display in tables and detail views
 
----
+### Phase 5: Default Values for Required Fields (Edit Entity) ✅
+
+- [x] **Default value input for new required fields when editing entity**
+  - Default Value input appears in FieldBuilder when adding a required field (edit mode only)
+  - Warning description: "This value will be applied to all existing records"
+  - Support for all field types: string, number, boolean, date
+- [x] **Enum fields automatic default**
+  - First option is automatically picked as default for enum fields
+  - Warning note displayed: "The first option will be picked as the default value"
+- [x] **Update entity action with transaction**
+  - Uses Drizzle transaction to atomically update entity and records
+  - Validates that new required fields have default values
+  - Updates all existing records with default values for new required fields
+  - Enum fields use first option as default automatically
 
 ## Upcoming Features
 
-### Phase 5: Search & Filter
+### Search & Filter
 
 - [ ] Global search across records
 - [ ] Field-specific filtering
 - [ ] Saved filter presets
 - [ ] Advanced query builder
 
-### Phase 6: Import/Export
+### Import/Export
 
 - [ ] CSV import for bulk record creation
 - [ ] CSV/JSON export of records
 - [ ] Entity schema export/import
 
-### Phase 7: Audit & History
+### Audit & History
 
 - [ ] Record change history
 - [ ] Audit log for entity modifications
 - [ ] Soft delete with restore capability
 
-### Phase 8: User Management
+### User Management
 
 - [ ] Authentication integration
 - [ ] Role-based access control

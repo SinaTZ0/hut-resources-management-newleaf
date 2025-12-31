@@ -4,14 +4,14 @@ import { useState } from 'react'
 import { z } from 'zod/v4'
 import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { X, Plus } from 'lucide-react'
+import { X, Plus, AlertTriangle } from 'lucide-react'
 
-import { FIELD_TYPES, enumOptionsSchema } from '@/lib/drizzle/schema'
-import { toSnakeCase } from '@/lib/utils/common-utils'
+import { FIELD_TYPES, enumOptionsSchema, type FieldValue } from '@/lib/drizzle/schema'
 import { Button } from '@/components/ui/button'
 import { FormInput } from '@/components/form/form-input'
 import { FormSelect } from '@/components/form/form-select'
 import { FormSwitch } from '@/components/form/form-switch'
+import { FormDatePicker } from '@/components/form/form-date-picker'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 
@@ -20,9 +20,11 @@ import { type EntityFormValues } from './entities-form-schema'
 type FieldBuilderProps = {
   readonly onAdd: (field: EntityFormValues['fields'][number]) => void
   readonly existingKeys: string[]
+  readonly mode?: 'create' | 'edit'
 }
 
 /*---------------------- Builder Schema ----------------------*/
+// defaultValue can be string, number, boolean, or Date depending on field type
 const builderFormSchema = z
   .object({
     label: z.string().min(1, 'Label is required'),
@@ -30,6 +32,7 @@ const builderFormSchema = z
     sortable: z.boolean(),
     required: z.boolean(),
     enumOptions: enumOptionsSchema.optional(),
+    defaultValue: z.union([z.string(), z.number(), z.boolean(), z.date()]).optional(),
   })
   .refine(
     (data) => {
@@ -46,12 +49,43 @@ const builderFormSchema = z
 
 type BuilderFormValues = z.infer<typeof builderFormSchema>
 
+/*--------- Helper: Resolve Default Value for Field ----------*/
+function resolveDefaultValue(values: BuilderFormValues): FieldValue | undefined {
+  // For enum fields, use the selected default value from form
+  if (values.type === 'enum' && values.enumOptions && values.enumOptions.length > 0) {
+    // Use selected defaultValue if it's a valid option, otherwise use first option
+    if (
+      typeof values.defaultValue === 'string' &&
+      values.enumOptions.includes(values.defaultValue)
+    ) {
+      return values.defaultValue
+    }
+    return values.enumOptions[0]
+  }
+
+  // No default value provided
+  if (values.defaultValue === undefined || values.defaultValue === '') {
+    return undefined
+  }
+
+  // For number fields, HTML input returns string, so convert it
+  if (values.type === 'number' && typeof values.defaultValue === 'string') {
+    const num = Number(values.defaultValue)
+    return isNaN(num) ? 0 : num
+  }
+
+  // For boolean and date, the value is already the correct type
+  return values.defaultValue
+}
+
 /*------------------------ Component -------------------------*/
-export function FieldBuilder({ onAdd, existingKeys }: FieldBuilderProps) {
+export function FieldBuilder({ onAdd, existingKeys, mode = 'create' }: FieldBuilderProps) {
   /*-------------------------- State ---------------------------*/
   const [enumInput, setEnumInput] = useState('')
   const [enumOptions, setEnumOptions] = useState<string[]>([])
   const [enumError, setEnumError] = useState<string | null>(null)
+
+  const isEditMode = mode === 'edit'
 
   /*------------------------ Form Setup ------------------------*/
   const form = useForm<BuilderFormValues>({
@@ -62,14 +96,18 @@ export function FieldBuilder({ onAdd, existingKeys }: FieldBuilderProps) {
       sortable: true,
       required: false,
       enumOptions: undefined,
+      defaultValue: undefined,
     },
   })
 
   const { handleSubmit, reset, setValue, control } = form
 
-  /*------------------------ Watch Type ------------------------*/
+  /*----------------------- Watch Fields -----------------------*/
   const selectedType = useWatch({ control, name: 'type' })
+  const isRequired = useWatch({ control, name: 'required' })
   const isEnumType = selectedType === 'enum'
+  const showDefaultValueInput = isEditMode && isRequired
+  const showEnumDefaultSelect = showDefaultValueInput && isEnumType && enumOptions.length > 0
 
   /*------------------- Enum Option Handlers -------------------*/
   const handleAddEnumOption = () => {
@@ -104,18 +142,14 @@ export function FieldBuilder({ onAdd, existingKeys }: FieldBuilderProps) {
 
   /*------------------------- Handlers -------------------------*/
   const onSubmit = (values: BuilderFormValues) => {
-    const base = toSnakeCase(values.label)
-    let key = base || 'field'
-    let i = 1
-    while (existingKeys.includes(key)) {
-      key = `${base}_${String(i)}`
-      i += 1
-    }
+    const shouldIncludeDefault = isEditMode && values.required
+    const defaultValue = shouldIncludeDefault ? resolveDefaultValue(values) : undefined
 
     onAdd({
       ...values,
       order: existingKeys.length,
       enumOptions: values.type === 'enum' ? values.enumOptions : undefined,
+      defaultValue,
     })
 
     // Reset form and enum state
@@ -221,6 +255,74 @@ export function FieldBuilder({ onAdd, existingKeys }: FieldBuilderProps) {
 
         <FormSwitch form={form} name='required' label='Required' testId='builder-required' />
       </div>
+
+      {/*------------ Default Value for Required Fields -------------*/}
+      {showDefaultValueInput && !isEnumType && (
+        <div className='flex flex-col gap-2'>
+          {/*------------- Render input based on field type -------------*/}
+          {selectedType === 'string' && (
+            <FormInput
+              form={form}
+              name='defaultValue'
+              label='Default Value'
+              placeholder='e.g., N/A, Unknown, Default'
+              testId='builder-default-value'
+            />
+          )}
+          {selectedType === 'number' && (
+            <FormInput
+              form={form}
+              name='defaultValue'
+              label='Default Value'
+              placeholder='e.g., 0'
+              type='number'
+              testId='builder-default-value'
+            />
+          )}
+          {selectedType === 'boolean' && (
+            <FormSwitch
+              form={form}
+              name='defaultValue'
+              label='Default Value'
+              testId='builder-default-value'
+            />
+          )}
+          {selectedType === 'date' && (
+            <FormDatePicker
+              form={form}
+              name='defaultValue'
+              label='Default Value'
+              testId='builder-default-value'
+            />
+          )}
+          <div className='flex items-start gap-2 p-2 rounded-md bg-amber-500/10 border border-amber-500/20'>
+            <AlertTriangle className='size-4 text-amber-500 shrink-0 mt-0.5' />
+            <p className='text-xs text-amber-600 dark:text-amber-400'>
+              This value will be applied to all existing records that don&apos;t have this field.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/*---------- Enum Default Value Select (Edit Mode) -----------*/}
+      {showEnumDefaultSelect && (
+        <div className='flex flex-col gap-2'>
+          <FormSelect
+            form={form}
+            name='defaultValue'
+            label='Default Value'
+            placeholder='Select default option'
+            testId='builder-default-value'
+            options={enumOptions.map((opt) => ({ label: opt, value: opt }))}
+          />
+          <div className='flex items-start gap-2 p-2 rounded-md bg-amber-500/10 border border-amber-500/20'>
+            <AlertTriangle className='size-4 text-amber-500 shrink-0 mt-0.5' />
+            <p className='text-xs text-amber-600 dark:text-amber-400'>
+              This value will be applied to all existing records that don&apos;t have this field.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/*------------------------ Add Button ------------------------*/}
       <Button
