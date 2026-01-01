@@ -27,6 +27,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Badge } from '@/components/ui/badge'
+import { Checkbox } from '@/components/ui/checkbox'
 import { deleteRecord } from '@/app/records/actions/delete-record'
 import type { FieldsSchema, FieldSchema, RecordSchema } from '@/lib/drizzle/schema'
 
@@ -72,7 +73,37 @@ function formatFieldValue(value: unknown, fieldType: FieldSchema['type']): strin
 }
 
 /*--------------------- Generate Columns ---------------------*/
-export function generateDynamicColumns(fields: FieldsSchema): ColumnDef<DynamicRecord>[] {
+export function generateDynamicColumns(
+  fields: FieldsSchema,
+  options?: { enableSelection?: boolean }
+): ColumnDef<DynamicRecord>[] {
+  const { enableSelection = false } = options ?? {}
+
+  /*--------------------- Selection Column ---------------------*/
+  const selectColumn: ColumnDef<DynamicRecord> = {
+    id: 'select',
+    header: ({ table }) => (
+      <Checkbox
+        checked={
+          table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && 'indeterminate')
+        }
+        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+        aria-label='Select all'
+        data-testid='select-all-checkbox'
+      />
+    ),
+    cell: ({ row }) => (
+      <Checkbox
+        checked={row.getIsSelected()}
+        onCheckedChange={(value) => row.toggleSelected(!!value)}
+        aria-label='Select row'
+        data-testid={`select-row-${row.original.id}`}
+      />
+    ),
+    enableSorting: false,
+    enableHiding: false,
+  }
+
   /*------------------------ ID Column -------------------------*/
   const idColumn: ColumnDef<DynamicRecord> = {
     accessorKey: 'id',
@@ -177,7 +208,16 @@ export function generateDynamicColumns(fields: FieldsSchema): ColumnDef<DynamicR
     cell: ({ row }) => <RecordActionsCell record={row.original} />,
   }
 
-  return [idColumn, ...fieldColumns, hasMetadataColumn, createdAtColumn, actionsColumn]
+  /*---------------------- Build Columns -----------------------*/
+  const columns: ColumnDef<DynamicRecord>[] = []
+
+  if (enableSelection) {
+    columns.push(selectColumn)
+  }
+
+  columns.push(idColumn, ...fieldColumns, hasMetadataColumn, createdAtColumn, actionsColumn)
+
+  return columns
 }
 
 /*------------------ Actions Cell Component ------------------*/
