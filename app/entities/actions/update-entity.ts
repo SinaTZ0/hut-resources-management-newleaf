@@ -57,6 +57,26 @@ function applyDefaultsToRecord(
   return { updated, needsUpdate }
 }
 
+/*------- Helper: Remove Orphaned Field Values from Record -------*/
+function removeOrphanedFieldValues(
+  fieldValues: FieldValues,
+  validFieldKeys: Set<string>
+): { updated: FieldValues; needsUpdate: boolean } {
+  const updated: FieldValues = {}
+  let needsUpdate = false
+
+  for (const [fieldKey, value] of Object.entries(fieldValues)) {
+    if (validFieldKeys.has(fieldKey)) {
+      updated[fieldKey] = value
+    } else {
+      // Field was deleted from entity schema
+      needsUpdate = true
+    }
+  }
+
+  return { updated, needsUpdate }
+}
+
 function isMissingRequiredDefaultValue(value: FieldValue | undefined): boolean {
   if (value === undefined || value === null) return true
   if (typeof value === 'string' && value.trim() === '') return true
@@ -257,6 +277,11 @@ export async function updateEntity(
       }
     }
 
+    /*------------ Detect Deleted Fields for Cleanup -------------*/
+    const newFieldKeys = new Set(Object.keys(parsed.data.fields))
+    const deletedFieldKeys = [...existingFieldKeys].filter((key) => !newFieldKeys.has(key))
+    const hasDeletedFields = deletedFieldKeys.length > 0
+
     /*----------- Use Transaction for Entity + Records -----------*/
     const result = await db.transaction(async (tx) => {
       /*---------------------- Update Entity -----------------------*/
@@ -279,24 +304,43 @@ export async function updateEntity(
         Object.keys(defaultsResult.sanitizedDefaultValues).length > 0 ||
         defaultsResult.newEnumFields.length > 0
 
-      /*--------- Update Records with Default Values for New Fields ---------*/
-      if (hasDefaultsToApply) {
+      /*--------- Update Records: Apply Defaults & Remove Orphaned Fields ---------*/
+      if (hasDefaultsToApply || hasDeletedFields) {
         const records = await tx
           .select({ id: recordsTable.id, fieldValues: recordsTable.fieldValues })
           .from(recordsTable)
           .where(eq(recordsTable.entityId, payload.id))
 
         for (const record of records) {
-          const { updated, needsUpdate } = applyDefaultsToRecord(
-            record.fieldValues,
-            defaultsResult.sanitizedDefaultValues,
-            defaultsResult.newEnumFields
-          )
+          let currentFieldValues = record.fieldValues
+          let needsUpdate = false
+
+          // Step 1: Remove orphaned field values (fields that were deleted)
+          if (hasDeletedFields) {
+            const orphanResult = removeOrphanedFieldValues(currentFieldValues, newFieldKeys)
+            if (orphanResult.needsUpdate) {
+              currentFieldValues = orphanResult.updated
+              needsUpdate = true
+            }
+          }
+
+          // Step 2: Apply default values for new required fields
+          if (hasDefaultsToApply) {
+            const defaultsApplyResult = applyDefaultsToRecord(
+              currentFieldValues,
+              defaultsResult.sanitizedDefaultValues,
+              defaultsResult.newEnumFields
+            )
+            if (defaultsApplyResult.needsUpdate) {
+              currentFieldValues = defaultsApplyResult.updated
+              needsUpdate = true
+            }
+          }
 
           if (needsUpdate) {
             await tx
               .update(recordsTable)
-              .set({ fieldValues: updated, updatedAt: new Date() })
+              .set({ fieldValues: currentFieldValues, updatedAt: new Date() })
               .where(eq(recordsTable.id, record.id))
           }
         }

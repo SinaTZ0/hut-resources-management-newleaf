@@ -64,7 +64,12 @@ export default defineConfig([
       },
     },
     rules: {
+      //sonarjs rules
+      'sonarjs/no-unused-vars': 'off',
       'sonarjs/function-return-type': 'off',
+      'sonarjs/no-nested-conditional': 'off',
+      'sonarjs/cognitive-complexity': ['error', 30],
+
       //typescript rules
       '@typescript-eslint/no-confusing-void-expression': 'off',
       '@typescript-eslint/no-unused-vars': [

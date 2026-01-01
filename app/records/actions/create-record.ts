@@ -15,7 +15,10 @@ import {
 import { sanitizeJson } from '@/lib/utils/common-utils'
 import { formatZodErrors, type ActionResult } from '@/types-and-schemas/common'
 
-import { createFieldValuesFormSchema } from '../components/records-form/record-form-schema'
+import {
+  createFieldValuesFormSchema,
+  stripEmptyNonRequiredFieldValues,
+} from '../components/records-form/record-form-schema'
 
 /*---------------------- Create Record -----------------------*/
 export async function createRecord(
@@ -72,12 +75,18 @@ export async function createRecord(
       }
     }
 
+    /*---------- Strip Empty Non-Required Field Values -----------*/
+    const cleanedFieldValues = stripEmptyNonRequiredFieldValues(
+      fieldValuesParsed.data as FieldValues,
+      entity.fields
+    )
+
     /*------------------------- Database -------------------------*/
     const result = await db
       .insert(recordsTable)
       .values({
         entityId: baseParsed.data.entityId,
-        fieldValues: fieldValuesParsed.data as FieldValues,
+        fieldValues: cleanedFieldValues,
         metadata: sanitizedMetadata,
       })
       .returning({ id: recordsTable.id })

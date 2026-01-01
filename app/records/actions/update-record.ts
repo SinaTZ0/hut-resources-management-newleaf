@@ -16,7 +16,10 @@ import {
 import { isValidUUID, sanitizeJson } from '@/lib/utils/common-utils'
 import { formatZodErrors, type ActionResult } from '@/types-and-schemas/common'
 
-import { createFieldValuesFormSchema } from '../components/records-form/record-form-schema'
+import {
+  createFieldValuesFormSchema,
+  stripEmptyNonRequiredFieldValues,
+} from '../components/records-form/record-form-schema'
 
 /*------------------ Update Payload Schema -------------------*/
 const updatePayloadSchema = z.object({
@@ -89,11 +92,17 @@ export async function updateRecord(id: string, payload: unknown): Promise<Action
       }
     }
 
+    /*---------- Strip Empty Non-Required Field Values -----------*/
+    const cleanedFieldValues = stripEmptyNonRequiredFieldValues(
+      fieldValuesParsed.data as FieldValues,
+      entityFields
+    )
+
     /*------------------------- Database -------------------------*/
     await db
       .update(recordsTable)
       .set({
-        fieldValues: fieldValuesParsed.data as FieldValues,
+        fieldValues: cleanedFieldValues,
         metadata: sanitizedMetadata,
         updatedAt: new Date(),
       })

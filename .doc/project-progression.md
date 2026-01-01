@@ -92,6 +92,23 @@ Flexible Resource Manager - A Next.js application for managing dynamic resources
   - Confirmation dialog before applying changes
   - Atomic batch update with validation
 
+### Phase 6.5: Field Value & Delete Behavior Normalization ✅
+
+- [x] **Field deletion cascades to record field values**
+  - When a field is deleted from an Entity, the corresponding field values are automatically removed from all associated Records
+  - Uses atomic transaction to ensure data consistency
+  - Prevents orphaned field values from accumulating in records
+- [x] **Empty non-required field values not stored**
+  - Non-required fields with empty/null/default values are stripped before database insert/update
+  - Applies to create record, update record, and batch create operations
+  - Prevents confusion from meaningless default values (e.g., 0 for numbers, empty strings)
+  - Intentional values (e.g., `false` for boolean) are preserved
+- [x] **Batch edit: Clear field value option**
+  - Added "Clear Field Value" toggle for non-required fields in batch edit dialog
+  - Users can select to remove field values entirely from selected records
+  - Server-side validation prevents clearing required fields
+  - Clear action removes the field key from `fieldValues` object
+
 ## Upcoming Features
 
 ### Search & Filter
