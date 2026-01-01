@@ -11,8 +11,10 @@ import {
   useReactTable,
   type ColumnDef,
   type ColumnFiltersState,
+  type RowSelectionState,
   type SortingState,
   type VisibilityState,
+  type OnChangeFn,
 } from '@tanstack/react-table'
 import { ChevronDown } from 'lucide-react'
 
@@ -40,6 +42,11 @@ type DataTableProps<TData, TValue> = Readonly<{
   searchKey?: string
   searchPlaceholder?: string
   testId?: string
+  enableRowSelection?: boolean
+  rowSelection?: RowSelectionState
+  onRowSelectionChange?: OnChangeFn<RowSelectionState>
+  getRowId?: (row: TData) => string
+  toolbarActions?: React.ReactNode
 }>
 
 /*------------------------ Component -------------------------*/
@@ -49,12 +56,21 @@ export function DataTable<TData, TValue>({
   searchKey,
   searchPlaceholder = 'Search...',
   testId,
+  enableRowSelection = false,
+  rowSelection: controlledRowSelection,
+  onRowSelectionChange,
+  getRowId,
+  toolbarActions,
 }: DataTableProps<TData, TValue>) {
   /*-------------------------- State ---------------------------*/
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
-  const [rowSelection, setRowSelection] = React.useState({})
+  const [internalRowSelection, setInternalRowSelection] = React.useState<RowSelectionState>({})
+
+  /*------------------- Row Selection State --------------------*/
+  const rowSelection = controlledRowSelection ?? internalRowSelection
+  const setRowSelection = onRowSelectionChange ?? setInternalRowSelection
 
   /*-------------------------- Table ---------------------------*/
   const table = useReactTable({
@@ -68,6 +84,8 @@ export function DataTable<TData, TValue>({
     getFilteredRowModel: getFilteredRowModel(),
     onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setRowSelection,
+    enableRowSelection,
+    getRowId,
     state: {
       sorting,
       columnFilters,
@@ -80,7 +98,7 @@ export function DataTable<TData, TValue>({
   return (
     <div className='w-full' data-testid={testId}>
       {/*------------------------- Toolbar --------------------------*/}
-      <div className='flex items-center py-4'>
+      <div className='flex items-center gap-2 py-4'>
         {searchKey && (
           <Input
             placeholder={searchPlaceholder}
@@ -90,6 +108,7 @@ export function DataTable<TData, TValue>({
             data-testid={testId ? `${testId}-search` : undefined}
           />
         )}
+        {toolbarActions}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant='outline' className='ml-auto'>

@@ -60,6 +60,38 @@ Flexible Resource Manager - A Next.js application for managing dynamic resources
   - Updates all existing records with default values for new required fields
   - Enum fields require an explicitly selected default value; no automatic first-option default is applied
 
+### Phase 6: Batch Create / Bulk Insert ✅
+
+- [x] **Client-side queue & dual-pane UI**
+  - Dual-pane interface (form on the left, queued/pending records list on the right)
+  - Local queue with add/delete/clear actions and confirm for large batches
+  - Desktop-first layout with scrollable panes and pinned footer actions
+- [x] **Server Action: `createRecordsBatch`**
+  - Atomic batch insert using Drizzle transaction
+  - Server-side validation for each record (dynamic per-entity schema)
+  - Batch size limit enforced (max 100 records per submission)
+  - Detailed error reporting: failed record indices returned and queue preserved on failure
+- [x] **Security & data hygiene**
+  - Metadata sanitization to prevent prototype pollution (`__proto__`, `constructor`, `prototype` removed)
+  - UUID/entity existence checks to avoid foreign key errors
+  - Transaction isolation to prevent race conditions during batch insert
+
+### Phase 7: Table Builder Bulk Actions ✅
+
+- [x] **Row selection in Table Builder**
+  - Checkbox column for selecting individual records
+  - "Select all" checkbox in header for current page
+  - Selected count indicator in toolbar
+- [x] **Bulk delete with confirmation**
+  - Delete multiple selected records in a single transaction
+  - Confirmation dialog showing count of records to delete
+  - Atomic operation with rollback on failure
+- [x] **Batch field edit with popup form**
+  - Popup form to edit a single field value across all selected records
+  - Field selector dropdown (only Depth 1 fields)
+  - Confirmation dialog before applying changes
+  - Atomic batch update with validation
+
 ## Upcoming Features
 
 ### Search & Filter
@@ -114,4 +146,4 @@ Flexible Resource Manager - A Next.js application for managing dynamic resources
 
 ---
 
-_Last updated: December 31, 2025_
+_Last updated: January 1, 2026_
