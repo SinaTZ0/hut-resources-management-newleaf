@@ -27,7 +27,7 @@ type BatchUpdatePayload = {
   fieldKey: string
   fieldValue: FieldValue
   /** When true, removes the field value entirely (only valid for non-required fields) */
-  deleteValue?: boolean
+  clearValue?: boolean
 }
 
 /*-------------------------- Config --------------------------*/
@@ -70,7 +70,7 @@ function parseBatchUpdatePayload(payload: BatchUpdatePayload): ParsedPayloadResu
 
 /*-------------------- Transaction Helper --------------------*/
 async function updateRecordsFieldInTransaction(payload: BatchUpdatePayload): Promise<string[]> {
-  const { recordIds, entityId, fieldKey, fieldValue, deleteValue } = payload
+  const { recordIds, entityId, fieldKey, fieldValue, clearValue: deleteValue } = payload
 
   return db.transaction(async (tx) => {
     const existingRecords = await tx
@@ -258,7 +258,7 @@ async function updateRecordsFieldBatchImpl(
   const parsed = parseBatchUpdatePayload(payload)
   if (!parsed.success) return parsed
 
-  const { recordIds, entityId, fieldKey, fieldValue, deleteValue } = parsed.data
+  const { recordIds, entityId, fieldKey, fieldValue, clearValue: deleteValue } = parsed.data
 
   /*------------------- Validate Batch Size --------------------*/
   if (recordIds.length > MAX_BATCH_SIZE) {
@@ -306,7 +306,7 @@ async function updateRecordsFieldBatchImpl(
     entityId,
     fieldKey,
     fieldValue,
-    deleteValue,
+    clearValue: deleteValue,
   })
 
   /*------------------------ Revalidate ------------------------*/

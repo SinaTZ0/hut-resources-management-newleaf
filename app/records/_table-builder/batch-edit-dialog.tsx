@@ -143,7 +143,7 @@ export function BatchEditDialog({
         entityId,
         fieldKey: selectedFieldKey,
         fieldValue,
-        deleteValue,
+        clearValue: deleteValue,
       })
 
       if (result.success) {
