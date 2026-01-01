@@ -25,7 +25,10 @@ export function FieldValuesForm<TFieldValues extends FieldValues = FieldValues>(
 
   /*-------------------------- Render --------------------------*/
   return (
-    <FieldGroup data-testid='field-values-form-fields'>
+    <FieldGroup
+      className='grid grid-cols-1 md:grid-cols-2 gap-6'
+      data-testid='field-values-form-fields'
+    >
       {sortedFields.map(([key, fieldDef]) => (
         <DynamicField
           form={form}

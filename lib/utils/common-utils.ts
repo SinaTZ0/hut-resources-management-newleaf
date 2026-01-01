@@ -22,7 +22,20 @@ export const isValidUUID = (id: unknown): id is string => {
 
 /*---------------------- Sanitize JSON -----------------------*/
 const MAX_JSON_DEPTH = 10
+const MAX_JSON_SIZE_BYTES = 64 * 1024 // 64KB max JSON size
 const FORBIDDEN_KEYS = new Set(['__proto__', 'constructor', 'prototype'])
+
+/*-------------------- Validate JSON Size --------------------*/
+export function validateJsonSize(
+  input: string | null | undefined,
+  maxBytes: number = MAX_JSON_SIZE_BYTES
+): boolean {
+  if (!input) return true
+  const byteLength = new TextEncoder().encode(input).length
+  return byteLength <= maxBytes
+}
+
+export const MAX_METADATA_SIZE = MAX_JSON_SIZE_BYTES
 
 export function sanitizeJson(input: unknown, depth = 0): Record<string, unknown> | null {
   if (input === null || input === undefined) return null
