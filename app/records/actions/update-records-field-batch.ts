@@ -189,6 +189,30 @@ export async function updateRecordsFieldBatch(
           error: 'Database connection failed. Please try again later.',
         }
       }
+
+      if (error.code === '23503') {
+        return {
+          success: false,
+          error:
+            'Related data was changed or removed during the update. Please refresh and try again.',
+        }
+      }
+
+      if (error.code === '40001') {
+        return {
+          success: false,
+          error:
+            'The update conflicted with another operation. Please try again.',
+        }
+      }
+
+      if (error.code === '40P01') {
+        return {
+          success: false,
+          error:
+            'The database was temporarily busy. Please try the update again.',
+        }
+      }
     }
 
     return {
