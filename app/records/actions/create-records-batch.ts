@@ -22,7 +22,10 @@ import {
 } from '@/lib/utils/common-utils'
 import { formatZodErrors, type ActionResult } from '@/types-and-schemas/common'
 
-import { createFieldValuesFormSchema } from '../components/records-form/record-form-schema'
+import {
+  createFieldValuesFormSchema,
+  stripEmptyNonRequiredFieldValues,
+} from '../components/records-form/record-form-schema'
 
 /*-------------------------- Types ---------------------------*/
 type BatchRecordPayload = Omit<InsertRecordSchema, 'metadata'> & {
@@ -124,11 +127,17 @@ function validateRecord(
     }
   }
 
+  /*---------- Strip Empty Non-Required Field Values -----------*/
+  const cleanedFieldValues = stripEmptyNonRequiredFieldValues(
+    fieldValuesParsed.data as FieldValues,
+    entityFields
+  )
+
   return {
     success: true,
     data: {
       entityId: record.entityId,
-      fieldValues: fieldValuesParsed.data as FieldValues,
+      fieldValues: cleanedFieldValues,
       metadata: sanitizedMetadata,
     },
   }

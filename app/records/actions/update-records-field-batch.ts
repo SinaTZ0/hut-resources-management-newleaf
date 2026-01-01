@@ -26,6 +26,8 @@ type BatchUpdatePayload = {
   entityId: string
   fieldKey: string
   fieldValue: FieldValue
+  /** When true, removes the field value entirely (only valid for non-required fields) */
+  clearValue?: boolean
 }
 
 /*-------------------------- Config --------------------------*/
@@ -37,6 +39,7 @@ const batchUpdatePayloadSchema = z.object({
   entityId: z.string(),
   fieldKey: z.string().min(1, 'Field key is required'),
   fieldValue: fieldValueSchema,
+  deleteValue: z.boolean().optional(),
 })
 
 /*-------------------- Error Result Type ---------------------*/
@@ -67,7 +70,7 @@ function parseBatchUpdatePayload(payload: BatchUpdatePayload): ParsedPayloadResu
 
 /*-------------------- Transaction Helper --------------------*/
 async function updateRecordsFieldInTransaction(payload: BatchUpdatePayload): Promise<string[]> {
-  const { recordIds, entityId, fieldKey, fieldValue } = payload
+  const { recordIds, entityId, fieldKey, fieldValue, clearValue: deleteValue } = payload
 
   return db.transaction(async (tx) => {
     const existingRecords = await tx
@@ -89,13 +92,24 @@ async function updateRecordsFieldInTransaction(payload: BatchUpdatePayload): Pro
     const updatedIds: string[] = []
 
     for (const record of existingRecords) {
+      let updatedFieldValues: typeof record.fieldValues
+
+      if (deleteValue) {
+        // Remove the field key entirely from fieldValues
+        const { [fieldKey]: _removed, ...rest } = record.fieldValues
+        updatedFieldValues = rest
+      } else {
+        // Update with new value
+        updatedFieldValues = {
+          ...record.fieldValues,
+          [fieldKey]: fieldValue,
+        }
+      }
+
       await tx
         .update(recordsTable)
         .set({
-          fieldValues: {
-            ...record.fieldValues,
-            [fieldKey]: fieldValue,
-          },
+          fieldValues: updatedFieldValues,
           updatedAt: new Date(),
         })
         .where(eq(recordsTable.id, record.id))
@@ -124,13 +138,26 @@ function validateFieldConfig(
     | { type: string; label: string; required: boolean; enumOptions?: string[] }
     | undefined,
   fieldKey: string,
-  fieldValue: FieldValue
+  fieldValue: FieldValue,
+  deleteValue?: boolean
 ): ErrorResult | null {
   if (!fieldConfig) {
     return {
       success: false,
       error: `Field "${fieldKey}" does not exist in entity schema`,
     }
+  }
+
+  // Handle delete value case
+  if (deleteValue) {
+    if (fieldConfig.required) {
+      return {
+        success: false,
+        error: `Cannot delete value for required field "${fieldConfig.label}"`,
+      }
+    }
+    // Delete is valid for non-required fields
+    return null
   }
 
   const typeValidation = validateFieldValueType(fieldValue, fieldConfig.type)
@@ -231,7 +258,7 @@ async function updateRecordsFieldBatchImpl(
   const parsed = parseBatchUpdatePayload(payload)
   if (!parsed.success) return parsed
 
-  const { recordIds, entityId, fieldKey, fieldValue } = parsed.data
+  const { recordIds, entityId, fieldKey, fieldValue, clearValue: deleteValue } = parsed.data
 
   /*------------------- Validate Batch Size --------------------*/
   if (recordIds.length > MAX_BATCH_SIZE) {
@@ -270,7 +297,7 @@ async function updateRecordsFieldBatchImpl(
   const entityFields = entity[0].fields
 
   /*------------------ Validate Field & Value ------------------*/
-  const fieldError = validateFieldConfig(entityFields[fieldKey], fieldKey, fieldValue)
+  const fieldError = validateFieldConfig(entityFields[fieldKey], fieldKey, fieldValue, deleteValue)
   if (fieldError) return fieldError
 
   /*---------------- Transaction: Batch Update -----------------*/
@@ -279,6 +306,7 @@ async function updateRecordsFieldBatchImpl(
     entityId,
     fieldKey,
     fieldValue,
+    clearValue: deleteValue,
   })
 
   /*------------------------ Revalidate ------------------------*/

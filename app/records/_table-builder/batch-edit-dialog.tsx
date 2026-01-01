@@ -63,6 +63,7 @@ export function BatchEditDialog({
   /*-------------------------- State ---------------------------*/
   const [selectedFieldKey, setSelectedFieldKey] = useState<string>('')
   const [fieldValue, setFieldValue] = useState<FieldValue>(null)
+  const [deleteValue, setDeleteValue] = useState(false)
   const [isConfirmOpen, setIsConfirmOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -85,6 +86,7 @@ export function BatchEditDialog({
   /*------------------------- Handlers -------------------------*/
   function handleFieldSelect(key: string) {
     setSelectedFieldKey(key)
+    setDeleteValue(false)
     // Reset value based on field type
     const config = entityFields[key]
     switch (config.type) {
@@ -105,14 +107,26 @@ export function BatchEditDialog({
     }
   }
 
+  function handleDeleteValueChange(checked: boolean) {
+    setDeleteValue(checked)
+    if (checked) {
+      // Reset field value when switching to delete mode
+      setFieldValue(null)
+    }
+  }
+
   function handleShowConfirm() {
     if (!selectedFieldKey) {
       toast.error('Please select a field to edit')
       return
     }
 
-    // Validate required fields
-    if (selectedFieldConfig?.required && (fieldValue === null || fieldValue === '')) {
+    // Validate required fields (only when not deleting)
+    if (
+      !deleteValue &&
+      selectedFieldConfig?.required &&
+      (fieldValue === null || fieldValue === '')
+    ) {
       toast.error(`${selectedFieldConfig.label} is required`)
       return
     }
@@ -129,10 +143,12 @@ export function BatchEditDialog({
         entityId,
         fieldKey: selectedFieldKey,
         fieldValue,
+        clearValue: deleteValue,
       })
 
       if (result.success) {
-        toast.success(`Updated ${String(result.data.updatedCount)} record(s)`)
+        const actionText = deleteValue ? 'Cleared' : 'Updated'
+        toast.success(`${actionText} ${String(result.data.updatedCount)} record(s)`)
         setIsConfirmOpen(false)
         onOpenChange(false)
         resetForm()
@@ -150,6 +166,7 @@ export function BatchEditDialog({
   function resetForm() {
     setSelectedFieldKey('')
     setFieldValue(null)
+    setDeleteValue(false)
   }
 
   function handleDialogClose(isOpen: boolean) {
@@ -193,8 +210,28 @@ export function BatchEditDialog({
               </Select>
             </div>
 
+            {/*---------- Clear Value Toggle (Non-Required Only) ----------*/}
+            {selectedFieldConfig && !selectedFieldConfig.required && (
+              <div className='flex items-center justify-between rounded-lg border p-3'>
+                <div className='space-y-0.5'>
+                  <Label htmlFor='delete-value' className='text-sm font-medium'>
+                    Clear Field Value
+                  </Label>
+                  <p className='text-xs text-muted-foreground'>
+                    Remove the value from all selected records
+                  </p>
+                </div>
+                <Switch
+                  id='delete-value'
+                  checked={deleteValue}
+                  onCheckedChange={handleDeleteValueChange}
+                  data-testid='batch-edit-delete-toggle'
+                />
+              </div>
+            )}
+
             {/*----------------------- Value Input ------------------------*/}
-            {selectedFieldConfig && (
+            {selectedFieldConfig && !deleteValue && (
               <div className='flex flex-col gap-2'>
                 <Label htmlFor='field-value'>
                   New Value
@@ -228,11 +265,25 @@ export function BatchEditDialog({
       <AlertDialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirm Batch Update</AlertDialogTitle>
+            <AlertDialogTitle>
+              {deleteValue ? 'Confirm Clear Field Values' : 'Confirm Batch Update'}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              You are about to update the &quot;{selectedFieldConfig?.label}&quot; field to{' '}
-              <strong className='text-foreground'>{formatDisplayValue(fieldValue)}</strong> for{' '}
-              <strong className='text-foreground'>{String(selectedIds.length)}</strong> record(s).
+              {deleteValue ? (
+                <>
+                  You are about to <strong className='text-destructive'>clear</strong> the &quot;
+                  {selectedFieldConfig?.label}&quot; field value for{' '}
+                  <strong className='text-foreground'>{String(selectedIds.length)}</strong>{' '}
+                  record(s).
+                </>
+              ) : (
+                <>
+                  You are about to update the &quot;{selectedFieldConfig?.label}&quot; field to{' '}
+                  <strong className='text-foreground'>{formatDisplayValue(fieldValue)}</strong> for{' '}
+                  <strong className='text-foreground'>{String(selectedIds.length)}</strong>{' '}
+                  record(s).
+                </>
+              )}
               <br />
               <br />
               This action cannot be undone easily. Are you sure you want to proceed?
@@ -248,8 +299,10 @@ export function BatchEditDialog({
               {isSubmitting ? (
                 <>
                   <Loader2 className='mr-2 h-4 w-4 animate-spin' />
-                  Updating...
+                  {deleteValue ? 'Clearing...' : 'Updating...'}
                 </>
+              ) : deleteValue ? (
+                'Confirm Clear'
               ) : (
                 'Confirm Update'
               )}
