@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Plus } from 'lucide-react'
+import { Layers, Plus } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -36,14 +36,22 @@ export default async function RecordsPage() {
             </p>
           </div>
           {entitiesResult.success && entitiesResult.data.length > 0 && (
-            <CreateRecordDropdown
-              entities={entitiesResult.data.map((e) => ({
-                id: e.id,
-                name: e.name,
-                description: e.description,
-              }))}
-              testId='create-record-dropdown'
-            />
+            <div className='flex items-center gap-2'>
+              <Button variant='outline' asChild data-testid='batch-create-btn'>
+                <Link href='/records/batch-create'>
+                  <Layers className='mr-2 size-4' />
+                  Batch Create
+                </Link>
+              </Button>
+              <CreateRecordDropdown
+                entities={entitiesResult.data.map((e) => ({
+                  id: e.id,
+                  name: e.name,
+                  description: e.description,
+                }))}
+                testId='create-record-dropdown'
+              />
+            </div>
           )}
           {entitiesResult.success && entitiesResult.data.length === 0 && (
             <Button asChild data-testid='create-entity-btn'>
