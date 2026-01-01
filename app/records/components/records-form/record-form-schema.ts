@@ -56,6 +56,7 @@ function isEmptyFieldValue(value: unknown, fieldType: FieldSchema['type']): bool
       return typeof value === 'number' && Number.isNaN(value)
     case 'date':
       return value instanceof Date && Number.isNaN(value.getTime())
+    // can't really be empty
     case 'boolean':
       return false
     default:
