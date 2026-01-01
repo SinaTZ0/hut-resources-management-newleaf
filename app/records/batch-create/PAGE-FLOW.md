@@ -2,7 +2,7 @@
 
 ## Overview
 
-This page allows users to queue multiple records locally and submit them to the database in a single atomic transaction. It uses a dual-pane interface with a pending records list on the left and a form on the right.
+This page allows users to queue multiple records locally and submit them to the database in a single atomic transaction. It uses a dual-pane interface with the form on the left and a pending records list on the right.
 
 ---
 
