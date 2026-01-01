@@ -168,57 +168,59 @@ export async function updateRecordsFieldBatch(
   try {
     return await updateRecordsFieldBatchImpl(payload)
   } catch (error) {
-    /*---------------------- Error Handling ----------------------*/
-    if (process.env.NODE_ENV !== 'production') {
-      console.error('Batch update records field error:', error)
-    } else {
-      console.error('Batch update records field error')
-    }
+    return mapBatchUpdateErrorToResult(error)
+  }
+}
 
-    if (error instanceof Error && KNOWN_ACTION_ERRORS.has(error.message)) {
-      return {
-        success: false,
-        error: error.message,
-      }
-    }
+/*------------------- Error Mapping Helper -------------------*/
+function mapBatchUpdateErrorToResult(error: unknown): ActionResult<UpdateBatchResult> {
+  if (process.env.NODE_ENV !== 'production') {
+    console.error('Batch update records field error:', error)
+  } else {
+    console.error('Batch update records field error')
+  }
 
-    if (error instanceof DatabaseError) {
-      if (error.code?.startsWith('08')) {
-        return {
-          success: false,
-          error: 'Database connection failed. Please try again later.',
-        }
-      }
-
-      if (error.code === '23503') {
-        return {
-          success: false,
-          error:
-            'Related data was changed or removed during the update. Please refresh and try again.',
-        }
-      }
-
-      if (error.code === '40001') {
-        return {
-          success: false,
-          error:
-            'The update conflicted with another operation. Please try again.',
-        }
-      }
-
-      if (error.code === '40P01') {
-        return {
-          success: false,
-          error:
-            'The database was temporarily busy. Please try the update again.',
-        }
-      }
-    }
-
+  if (error instanceof Error && KNOWN_ACTION_ERRORS.has(error.message)) {
     return {
       success: false,
-      error: 'An unexpected error occurred. Please try again.',
+      error: error.message,
     }
+  }
+
+  if (error instanceof DatabaseError) {
+    if (error.code?.startsWith('08')) {
+      return {
+        success: false,
+        error: 'Database connection failed. Please try again later.',
+      }
+    }
+
+    if (error.code === '23503') {
+      return {
+        success: false,
+        error:
+          'Related data was changed or removed during the update. Please refresh and try again.',
+      }
+    }
+
+    if (error.code === '40001') {
+      return {
+        success: false,
+        error: 'The update conflicted with another operation. Please try again.',
+      }
+    }
+
+    if (error.code === '40P01') {
+      return {
+        success: false,
+        error: 'The database was temporarily busy. Please try the update again.',
+      }
+    }
+  }
+
+  return {
+    success: false,
+    error: 'An unexpected error occurred. Please try again.',
   }
 }
 
