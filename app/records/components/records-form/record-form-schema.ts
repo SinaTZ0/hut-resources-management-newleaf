@@ -49,6 +49,9 @@ function isEmptyFieldValue(value: unknown, fieldType: FieldSchema['type']): bool
   if (typeof value === 'string' && value.trim() === '') return true
 
   switch (fieldType) {
+    // At this point, any string value has already passed the trim() === '' check above,
+    // so it is guaranteed to be a non-empty string. For both 'string' and 'enum' types,
+    // any non-empty string is considered a meaningful (non-empty) value.
     case 'string':
     case 'enum':
       return false
