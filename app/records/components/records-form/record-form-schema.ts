@@ -22,7 +22,7 @@ export function stripEmptyNonRequiredFieldValues(
       ? fieldsSchema[fieldKey]
       : undefined
 
-    // Keep value if field config doesn't exist (orphaned key)
+    // Skip orphaned keys (field config doesn't exist)
     if (!fieldConfig) continue
 
     // Always keep required field values
