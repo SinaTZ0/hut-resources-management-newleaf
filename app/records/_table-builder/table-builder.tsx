@@ -245,6 +245,19 @@ function RecordsTableCard({
   onBulkActionComplete,
   testId,
 }: RecordsTableCardProps) {
+  /*---------------- Default Column Visibility -----------------*/
+  const initialColumnVisibility = useMemo(() => {
+    const visibility: Record<string, boolean> = {}
+
+    for (const [fieldKey, fieldConfig] of Object.entries(selectedEntity.fields)) {
+      if (!fieldConfig.sortable) {
+        visibility[fieldKey] = false
+      }
+    }
+
+    return visibility
+  }, [selectedEntity.fields])
+
   return (
     <Card>
       <CardHeader>
@@ -265,8 +278,10 @@ function RecordsTableCard({
           </div>
         ) : (
           <DataTable
+            key={selectedEntityId ?? selectedEntity.id}
             columns={columns}
             data={filteredRecords}
+            initialColumnVisibility={initialColumnVisibility}
             enableRowSelection
             rowSelection={rowSelection}
             onRowSelectionChange={setRowSelection}

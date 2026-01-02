@@ -42,6 +42,7 @@ type DataTableProps<TData, TValue> = Readonly<{
   searchKey?: string
   searchPlaceholder?: string
   testId?: string
+  initialColumnVisibility?: VisibilityState
   enableRowSelection?: boolean
   rowSelection?: RowSelectionState
   onRowSelectionChange?: OnChangeFn<RowSelectionState>
@@ -56,6 +57,7 @@ export function DataTable<TData, TValue>({
   searchKey,
   searchPlaceholder = 'Search...',
   testId,
+  initialColumnVisibility,
   enableRowSelection = false,
   rowSelection: controlledRowSelection,
   onRowSelectionChange,
@@ -65,7 +67,9 @@ export function DataTable<TData, TValue>({
   /*-------------------------- State ---------------------------*/
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
-  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
+  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>(
+    initialColumnVisibility ?? {}
+  )
   const [internalRowSelection, setInternalRowSelection] = React.useState<RowSelectionState>({})
 
   /*------------------- Row Selection State --------------------*/
