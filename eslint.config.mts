@@ -19,6 +19,8 @@ export default defineConfig([
     'next-env.d.ts',
     'components/ui/**',
     '**/use-mobile.ts',
+    '**/seed.ts',
+    '**/seed-data.ts',
   ]),
   // TypeScript files
   {
