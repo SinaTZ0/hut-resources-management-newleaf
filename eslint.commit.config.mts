@@ -11,7 +11,16 @@ import eslintPluginNext from '@next/eslint-plugin-next'
 
 export default defineConfig([
   // Global ignores
-  globalIgnores(['.next/**', 'out/**', 'build/**', 'next-env.d.ts', 'components/ui/**']),
+  globalIgnores([
+    '.next/**',
+    'out/**',
+    'build/**',
+    'next-env.d.ts',
+    'components/ui/**',
+    '**/use-mobile.ts',
+    '**/seed.ts',
+    '**/seed-data.ts',
+  ]),
   // TypeScript files
   {
     name: 'ts-files',

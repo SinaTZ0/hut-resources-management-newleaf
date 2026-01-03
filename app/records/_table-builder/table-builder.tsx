@@ -157,7 +157,7 @@ function EntitySelectorCard({
             <span className='text-sm font-medium mb-2 block' id='entity-type-label'>
               Entity Type
             </span>
-            <Popover open={open} onOpenChange={setOpen}>
+            <Popover open={open} onOpenChange={setOpen} modal={false}>
               <PopoverTrigger asChild>
                 <Button
                   variant='outline'
@@ -171,7 +171,7 @@ function EntitySelectorCard({
                   <ChevronsUpDown className='ml-2 h-4 w-4 shrink-0 opacity-50' />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className='w-[--radix-popover-trigger-width] p-0'>
+              <PopoverContent className='w-[--radix-popover-trigger-width] p-0' align='start'>
                 <Command>
                   <CommandInput placeholder='Search entities...' />
                   <CommandList>

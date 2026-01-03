@@ -335,7 +335,7 @@ export function CreateAndUpdateEntityForm({ mode, initialData }: EntityFormProps
       onSubmit={(e) => {
         void handleSubmit(onSubmit)(e)
       }}
-      className='flex flex-col max-w-6xl w-full m-auto gap-8 px-4 sm:px-6'
+      className='flex flex-col max-w-7xl w-full m-auto gap-8 px-4 sm:px-6'
     >
       {/*-------------------------- Header --------------------------*/}
       <div className='flex items-start gap-4'>
