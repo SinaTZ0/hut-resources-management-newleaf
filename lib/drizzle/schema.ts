@@ -94,6 +94,34 @@ const _EntitySchemaTypeCheck: IsEqual<EntitySchema, _EntitiesTableSelect> = true
 /*                            RECORDS                                  */
 /*=====================================================================*/
 
+/*---------------------- Assets Schema -----------------------*/
+export const assetGallerySchema = z.strictObject({
+  titleAndID: z.string().min(1, { message: 'Gallery ID is required' }),
+  paths: z.array(z.string()),
+})
+
+export const assetFileSchema = z.strictObject({
+  titleAndID: z.string().min(1, { message: 'File group ID is required' }),
+  paths: z.array(z.string()),
+})
+
+export const assetThumbnailSchema = z.strictObject({
+  path: z.string().min(1, { message: 'Thumbnail path is required' }),
+})
+
+export const assetsSchema = z
+  .strictObject({
+    galleries: z.array(assetGallerySchema).optional(),
+    files: z.array(assetFileSchema).optional(),
+    thumbnail: assetThumbnailSchema.optional(),
+  })
+  .nullable()
+
+export type AssetGallery = z.output<typeof assetGallerySchema>
+export type AssetFile = z.output<typeof assetFileSchema>
+export type AssetThumbnail = z.output<typeof assetThumbnailSchema>
+export type Assets = z.output<typeof assetsSchema>
+
 /*----------------------- Field Value ------------------------*/
 export const fieldValueSchema = z.union([
   z.string(),
@@ -126,6 +154,7 @@ export const recordsTable = pgTable('records', {
     .references(() => entitiesTable.id, { onDelete: 'cascade' }),
   fieldValues: jsonb('field_values').notNull().$type<FieldValues>(),
   metadata: jsonb('metadata').$type<Metadata>(),
+  assets: jsonb('assets').$type<Assets>(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 })
@@ -136,6 +165,7 @@ export const recordSchema = z.strictObject({
   entityId: z.uuid(),
   fieldValues: fieldValuesSchema,
   metadata: metadataSchema,
+  assets: assetsSchema,
   createdAt: z.date(),
   updatedAt: z.date(),
 })

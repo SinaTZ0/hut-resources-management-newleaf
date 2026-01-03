@@ -35,6 +35,7 @@ export async function getRecords(
         entityName: entitiesTable.name,
         fieldValues: recordsTable.fieldValues,
         metadata: recordsTable.metadata,
+        assets: recordsTable.assets,
         createdAt: recordsTable.createdAt,
         updatedAt: recordsTable.updatedAt,
       })

@@ -27,7 +27,7 @@ type EntityOption = Pick<EntitySchema, 'id' | 'name' | 'description' | 'fields'>
 
 type RecordData = Pick<
   RecordSchema,
-  'id' | 'entityId' | 'fieldValues' | 'metadata' | 'createdAt' | 'updatedAt'
+  'id' | 'entityId' | 'fieldValues' | 'metadata' | 'assets' | 'createdAt' | 'updatedAt'
 >
 
 type TableBuilderProps = {

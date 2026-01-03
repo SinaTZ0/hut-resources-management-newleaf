@@ -109,6 +109,34 @@ Flexible Resource Manager - A Next.js application for managing dynamic resources
   - Server-side validation prevents clearing required fields
   - Clear action removes the field key from `fieldValues` object
 
+### Phase 8: Record Assets (Thumbnail, Galleries, Files) ✅
+
+- [x] **Assets JSONB column in Records table**
+  - Flexible schema: `{ thumbnail?: { path }, galleries?: Array<{ titleAndID, path[] }>, files?: Array<{ titleAndID, path[] }> }`
+  - Stores file paths relative to `/public/uploads/records/{recordId}/`
+  - Slug-based naming: `titleAndID` stored as slug, displayed as prettified title in UI
+- [x] **Thumbnail generation with sharp**
+  - Server-side processing using sharp library
+  - Automatic resize to 200×200 pixels in WebP format
+  - Single thumbnail per record, replaces existing on re-upload
+- [x] **Gallery & file upload system**
+  - Multiple galleries per record (each with title + array of images)
+  - Multiple file groups per record (each with title + array of files)
+  - Image validation: max 10MB, accepts jpg/jpeg/png/gif/webp
+  - File validation: max 50MB per file
+- [x] **AssetsForm component for record edit page**
+  - Thumbnail upload with image preview
+  - Gallery upload: add new galleries with custom title and multiple images
+  - Files upload: add new file groups with custom title and multiple files
+  - Integrated below RecordForm on edit page
+- [x] **Assets display on record detail page**
+  - Thumbnail displayed in record header
+  - Galleries in lazy-loading accordion (images fetched on expand)
+  - Files in lazy-loading accordion (file list fetched on expand)
+- [x] **Thumbnail column in Table Builder**
+  - Shows 40×40 thumbnail in record list
+  - Fallback icon for records without thumbnail
+
 ## Upcoming Features
 
 ### Search & Filter
@@ -163,4 +191,4 @@ Flexible Resource Manager - A Next.js application for managing dynamic resources
 
 ---
 
-_Last updated: January 1, 2026_
+_Last updated: January 2, 2026_

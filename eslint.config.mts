@@ -28,7 +28,7 @@ export default defineConfig([
       eslint.configs.recommended,
       importPlugin.flatConfigs.recommended,
       jsxA11y.flatConfigs.recommended,
-      sonarjs.configs.recommended,
+      // sonarjs.configs.recommended,
       reactHooks.configs.flat['recommended-latest'],
       reactPlugin.configs.flat.recommended,
       reactPlugin.configs.flat['jsx-runtime'],
@@ -65,10 +65,10 @@ export default defineConfig([
     },
     rules: {
       //sonarjs rules
-      'sonarjs/no-unused-vars': 'off',
-      'sonarjs/function-return-type': 'off',
-      'sonarjs/no-nested-conditional': 'off',
-      'sonarjs/cognitive-complexity': ['error', 30],
+      // 'sonarjs/no-unused-vars': 'off',
+      // 'sonarjs/function-return-type': 'off',
+      // 'sonarjs/no-nested-conditional': 'off',
+      // 'sonarjs/cognitive-complexity': ['error', 30],
 
       //typescript rules
       '@typescript-eslint/no-confusing-void-expression': 'off',

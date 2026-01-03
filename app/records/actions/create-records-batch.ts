@@ -28,7 +28,7 @@ import {
 } from '../components/records-form/record-form-schema'
 
 /*-------------------------- Types ---------------------------*/
-type BatchRecordPayload = Omit<InsertRecordSchema, 'metadata'> & {
+type BatchRecordPayload = Omit<InsertRecordSchema, 'metadata' | 'assets'> & {
   metadata: Record<string, unknown> | null
 }
 
