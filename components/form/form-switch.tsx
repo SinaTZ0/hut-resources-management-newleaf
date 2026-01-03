@@ -65,7 +65,7 @@ export function FormSwitch<
           <Switch
             id={field.name}
             name={field.name}
-            checked={field.value}
+            checked={Boolean(field.value)}
             onCheckedChange={field.onChange}
             disabled={disabled}
             data-testid={testId}

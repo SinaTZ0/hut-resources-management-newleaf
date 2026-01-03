@@ -1,6 +1,6 @@
 'use client'
 
-import { useTransition } from 'react'
+import { useState, useTransition } from 'react'
 import { useForm, useFieldArray } from 'react-hook-form'
 import { useRouter } from 'next/navigation'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -21,12 +21,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Separator } from '@/components/ui/separator'
 import { createEntity } from '@/app/entities/actions/create-entity'
 import { updateEntity } from '@/app/entities/actions/update-entity'
+import { getBackfillAffectedRecordCount } from '@/app/records/queries/get-record-count'
 import type { ActionResult } from '@/types-and-schemas/common'
 
 import { SavedFieldsList } from './saved-fields-list'
 import { FieldBuilder } from './field-builder'
 import { EntityInfoForm } from './entity-info-form'
-import { entityFormSchema, type EntityFormValues } from './entities-form-schema'
+import { entityFormSchema, type EntityFormInputValues } from './entities-form-schema'
+import { RequiredFieldDialog } from './_required-field-dialog/required-field-dialog'
 
 /*------------------------ Props Type ------------------------*/
 type EntityFormProps = {
@@ -38,12 +40,16 @@ type EntityFormProps = {
 export function CreateAndUpdateEntityForm({ mode, initialData }: EntityFormProps) {
   /*-------------------------- State ---------------------------*/
   const [isPending, startTransition] = useTransition()
+  const [pendingRequiredUpdate, setPendingRequiredUpdate] = useState<{
+    affectedCount: number
+    payload: Parameters<typeof updateEntity>[0]
+  } | null>(null)
   const router = useRouter()
 
   const isEditMode = mode === 'edit'
 
   /*----------- Transform Initial Data for Edit Mode -----------*/
-  const getInitialFields = (): EntityFormValues['fields'] => {
+  const getInitialFields = (): EntityFormInputValues['fields'] => {
     if (!initialData?.fields) return []
 
     return Object.entries(initialData.fields)
@@ -58,7 +64,7 @@ export function CreateAndUpdateEntityForm({ mode, initialData }: EntityFormProps
       .sort((a, b) => a.order - b.order)
   }
   /*------------------------ Form Setup ------------------------*/
-  const form = useForm({
+  const form = useForm<EntityFormInputValues>({
     resolver: zodResolver(entityFormSchema),
     defaultValues: {
       name: initialData?.name ?? '',
@@ -78,6 +84,34 @@ export function CreateAndUpdateEntityForm({ mode, initialData }: EntityFormProps
     control,
     name: 'fields',
   })
+
+  /*---------------- Helpers: Field Error Bind -----------------*/
+  const applyServerFieldErrors = (fieldErrors?: Record<string, string[]>) => {
+    if (!fieldErrors) return
+
+    Object.entries(fieldErrors).forEach(([field, errors]) => {
+      if (field === 'name') {
+        form.setError('name', { message: errors[0] })
+      } else if (field === 'description') {
+        form.setError('description', { message: errors[0] })
+      }
+    })
+  }
+
+  const performUpdateEntity = (payload: Parameters<typeof updateEntity>[0]) => {
+    startTransition(async () => {
+      const actionResult = await updateEntity(payload)
+
+      if (!actionResult.success) {
+        toast.error(actionResult.error)
+        applyServerFieldErrors(actionResult.fieldErrors)
+        return
+      }
+
+      toast.success('Entity updated successfully!')
+      router.push('/entities')
+    })
+  }
 
   /*------------------------- Handlers -------------------------*/
   const handleAddField = (field: FieldSchema) => {
@@ -102,13 +136,6 @@ export function CreateAndUpdateEntityForm({ mode, initialData }: EntityFormProps
     }
     return isEditMode ? 'Update Entity' : 'Create Entity'
   }
-  // Normalize fields with defaults for SavedFieldsList (which expects FieldSchema)
-  const normalizedFields: FieldSchema[] = savedFields.map((f) => ({
-    ...f,
-    sortable: f.sortable ?? true,
-    required: f.required ?? false,
-    enumOptions: f.type === 'enum' ? f.enumOptions : undefined,
-  }))
   const fieldsError = form.formState.errors.fields?.message
 
   /*---------------------- Theme Classes -----------------------*/
@@ -123,7 +150,7 @@ export function CreateAndUpdateEntityForm({ mode, initialData }: EntityFormProps
       }
 
   /*-------------------------- Submit --------------------------*/
-  const onSubmit = (data: EntityFormValues) => {
+  const onSubmit = async (data: EntityFormInputValues) => {
     /*----------- Validate Unique Generated Field Keys -----------*/
     const fieldKeys = data.fields.map((f) => toSnakeCase(f.label))
     const emptyKeys = fieldKeys.filter((k) => !k)
@@ -150,23 +177,94 @@ export function CreateAndUpdateEntityForm({ mode, initialData }: EntityFormProps
     /*--------------- Transform to array to record ---------------*/
     const fields: Record<string, FieldSchema> = {}
     const defaultValues: Record<string, FieldValue> = {}
+    const newlyRequiredFieldKeys: string[] = []
+    let hasDefaultErrors: boolean = false
 
-    data.fields.forEach((f, idx) => {
+    const coerceDefaultValue = (args: {
+      field: EntityFormInputValues['fields'][number]
+    }): FieldValue | undefined => {
+      const { field } = args
+
+      if (field.type === 'boolean') {
+        // For boolean, both true/false are valid defaults. Treat undefined as false.
+        return typeof field.defaultValue === 'boolean' ? field.defaultValue : false
+      }
+
+      const raw = field.defaultValue
+      if (raw === undefined || raw === null) return undefined
+
+      switch (field.type) {
+        case 'string': {
+          if (typeof raw !== 'string') return undefined
+          const trimmed = raw.trim()
+          return trimmed.length > 0 ? trimmed : undefined
+        }
+        case 'number': {
+          if (typeof raw === 'number') return raw
+          if (typeof raw === 'string') {
+            const num = Number(raw)
+            return Number.isFinite(num) ? num : undefined
+          }
+          return undefined
+        }
+        case 'date': {
+          const d = raw instanceof Date ? raw : new Date(String(raw))
+          return isNaN(d.getTime()) ? undefined : d
+        }
+        case 'enum': {
+          if (!field.enumOptions || field.enumOptions.length === 0) return undefined
+          if (typeof raw !== 'string') return undefined
+          return field.enumOptions.includes(raw) ? raw : undefined
+        }
+        default:
+          return undefined
+      }
+    }
+
+    for (let idx = 0; idx < data.fields.length; idx++) {
+      const f = data.fields[idx]
       const key: string = toSnakeCase(f.label)
+
+      const sortable = f.sortable ?? true
+      const required = f.required ?? false
       fields[key] = {
         label: f.label,
         type: f.type,
-        sortable: f.sortable,
-        required: f.required,
+        sortable,
+        required,
         order: idx,
         enumOptions: f.type === 'enum' ? f.enumOptions : undefined,
       }
 
-      // Collect default values for new required fields (edit mode only)
-      if (isEditMode && f.required && f.defaultValue !== undefined) {
-        defaultValues[key] = f.defaultValue
+      /*------ Defaults for Newly Required Fields (Edit Mode) ------*/
+      const wasRequiredBefore = initialData?.fields[key]?.required ?? false
+      const isNewlyRequired = isEditMode && required && !wasRequiredBefore
+
+      if (isNewlyRequired) {
+        const coerced = coerceDefaultValue({ field: f })
+        const isMissingDefault = coerced === undefined || coerced === null
+
+        if (isMissingDefault) {
+          hasDefaultErrors = true
+          const defaultValuePath =
+            `fields.${String(idx)}.defaultValue` as `fields.${number}.defaultValue`
+          form.setError(defaultValuePath, {
+            message:
+              f.type === 'enum'
+                ? 'Default value is required. Please select an option.'
+                : 'Default value is required when field is marked as required',
+          })
+        } else {
+          defaultValues[key] = coerced
+          newlyRequiredFieldKeys.push(key)
+        }
       }
-    })
+    }
+
+    if (hasDefaultErrors) {
+      toast.error('Please provide default values for newly required fields.')
+      return
+    }
 
     /*---------------- Build payload and validate ----------------*/
     const payload: InsertEntitySchema = {
@@ -182,38 +280,53 @@ export function CreateAndUpdateEntityForm({ mode, initialData }: EntityFormProps
     }
 
     /*--------------------- Submit to Server ---------------------*/
-    startTransition(async () => {
-      let actionResult: ActionResult<{ id: string }>
+    const performCreateEntity = (payload: InsertEntitySchema) => {
+      startTransition(async () => {
+        const actionResult: ActionResult<{ id: string }> = await createEntity(payload)
 
-      if (isEditMode && initialData?.id) {
-        actionResult = await updateEntity({
-          ...result.data,
-          id: initialData.id,
-          defaultValues: Object.keys(defaultValues).length > 0 ? defaultValues : undefined,
-        })
-      } else {
-        actionResult = await createEntity(result.data)
-      }
-
-      if (!actionResult.success) {
-        toast.error(actionResult.error)
-
-        // Attach field errors to form fields
-        if (actionResult.fieldErrors) {
-          Object.entries(actionResult.fieldErrors).forEach(([field, fieldErrors]) => {
-            if (field === 'name') {
-              form.setError('name', { message: fieldErrors[0] })
-            } else if (field === 'description') {
-              form.setError('description', { message: fieldErrors[0] })
-            }
-          })
+        if (!actionResult.success) {
+          toast.error(actionResult.error)
+          applyServerFieldErrors(actionResult.fieldErrors)
+          return
         }
-        return
+
+        toast.success('Entity created successfully!')
+        router.push('/entities')
+      })
+    }
+
+    if (isEditMode && initialData?.id) {
+      const updatePayload: Parameters<typeof updateEntity>[0] = {
+        ...result.data,
+        id: initialData.id,
+        defaultValues: newlyRequiredFieldKeys.length > 0 ? defaultValues : undefined,
       }
 
-      toast.success(isEditMode ? 'Entity updated successfully!' : 'Entity created successfully!')
-      router.push('/entities')
-    })
+      if (newlyRequiredFieldKeys.length > 0) {
+        const countResult = await getBackfillAffectedRecordCount({
+          entityId: initialData.id,
+          fieldKeys: newlyRequiredFieldKeys,
+        })
+
+        if (!countResult.success) {
+          toast.error(countResult.error)
+          return
+        }
+
+        if (countResult.data > 0) {
+          setPendingRequiredUpdate({
+            affectedCount: countResult.data,
+            payload: updatePayload,
+          })
+          return
+        }
+      }
+
+      performUpdateEntity(updatePayload)
+      return
+    }
+
+    performCreateEntity(result.data)
   }
 
   /*-------------------------- Render --------------------------*/
@@ -300,7 +413,10 @@ export function CreateAndUpdateEntityForm({ mode, initialData }: EntityFormProps
                 {/* 51.5vh is magic number so it match le Left Column height */}
                 <div className='max-h-[40vh] md:max-h-[51.5vh] overflow-auto'>
                   <SavedFieldsList
-                    fields={normalizedFields}
+                    form={form}
+                    fields={savedFields}
+                    mode={mode}
+                    initialFields={initialData?.fields}
                     onRemove={handleRemoveField}
                     onReorder={handleReorder}
                   />
@@ -310,6 +426,23 @@ export function CreateAndUpdateEntityForm({ mode, initialData }: EntityFormProps
           </div>
         </div>
       </div>
+
+      {/*----------------- Required Backfill Dialog -----------------*/}
+      <RequiredFieldDialog
+        open={pendingRequiredUpdate !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingRequiredUpdate(null)
+        }}
+        affectedCount={pendingRequiredUpdate?.affectedCount ?? 0}
+        isPending={isPending}
+        testId='required-field'
+        onConfirm={() => {
+          if (!pendingRequiredUpdate) return
+          const payload = pendingRequiredUpdate.payload
+          setPendingRequiredUpdate(null)
+          performUpdateEntity(payload)
+        }}
+      />
 
       {/*---------------------- Submit Button -----------------------*/}
       <div className='flex justify-end mt-4 mb-12'>

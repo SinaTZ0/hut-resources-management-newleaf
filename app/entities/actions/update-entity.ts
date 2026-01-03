@@ -29,18 +29,38 @@ export type UpdateEntityPayload = InsertEntitySchema & {
   defaultValues?: Record<string, FieldValue>
 }
 
+/*---------------- Prototype Pollution Guard -----------------*/
+const FORBIDDEN_OBJECT_KEYS = new Set(['__proto__', 'prototype', 'constructor'])
+
+function isForbiddenObjectKey(key: string): boolean {
+  return FORBIDDEN_OBJECT_KEYS.has(key)
+}
+
+function normalizeFieldValues(raw: unknown): FieldValues {
+  if (raw === null || raw === undefined) return {}
+  if (typeof raw !== 'object') return {}
+  if (Array.isArray(raw)) return {}
+  return raw as FieldValues
+}
+
 /*---------- Helper: Apply Default Values to Record ----------*/
 function applyDefaultsToRecord(
   fieldValues: FieldValues,
   defaultValues: Record<string, FieldValue>,
   newEnumFields: Array<[string, FieldValue]>
 ): { updated: FieldValues; needsUpdate: boolean } {
-  const updated: FieldValues = { ...fieldValues }
+  const updated: FieldValues = {}
+  for (const [k, v] of Object.entries(fieldValues)) {
+    if (!isForbiddenObjectKey(k)) updated[k] = v
+  }
   let needsUpdate = false
 
   // Apply explicit default values
   for (const [fieldKey, defaultValue] of Object.entries(defaultValues)) {
-    if (!(fieldKey in updated) || updated[fieldKey] === null) {
+    if (isForbiddenObjectKey(fieldKey)) continue
+    const hasValue = Object.prototype.hasOwnProperty.call(updated, fieldKey)
+    const isNullish = updated[fieldKey] == null
+    if (!hasValue || isNullish) {
       updated[fieldKey] = defaultValue
       needsUpdate = true
     }
@@ -48,7 +68,10 @@ function applyDefaultsToRecord(
 
   // Apply enum defaults
   for (const [fieldKey, defaultValue] of newEnumFields) {
-    if (!(fieldKey in updated) || updated[fieldKey] === null) {
+    if (isForbiddenObjectKey(fieldKey)) continue
+    const hasValue = Object.prototype.hasOwnProperty.call(updated, fieldKey)
+    const isNullish = updated[fieldKey] == null
+    if (!hasValue || isNullish) {
       updated[fieldKey] = defaultValue
       needsUpdate = true
     }
@@ -66,6 +89,10 @@ function removeOrphanedFieldValues(
   let needsUpdate = false
 
   for (const [fieldKey, value] of Object.entries(fieldValues)) {
+    if (isForbiddenObjectKey(fieldKey)) {
+      needsUpdate = true
+      continue
+    }
     if (validFieldKeys.has(fieldKey)) {
       updated[fieldKey] = value
     } else {
@@ -151,7 +178,7 @@ function getBackfillDecisionForNewRequiredField(args: {
 /*------- Helper: Validate and Sanitize Defaults for Backfill -------*/
 function sanitizeDefaultsForNewRequiredFields(args: {
   fields: FieldsSchema
-  existingFieldKeys: Set<string>
+  existingFields: FieldsSchema
   rawDefaultValues?: Record<string, FieldValue>
 }):
   | {
@@ -160,7 +187,7 @@ function sanitizeDefaultsForNewRequiredFields(args: {
       newEnumFields: Array<[string, FieldValue]>
     }
   | { success: false; error: string } {
-  const { fields, existingFieldKeys, rawDefaultValues } = args
+  const { fields, existingFields, rawDefaultValues } = args
 
   const newEnumFields: Array<[string, FieldValue]> = []
   const sanitizedDefaultValues: Record<string, FieldValue> = {}
@@ -168,7 +195,10 @@ function sanitizeDefaultsForNewRequiredFields(args: {
   const invalidDefaults: string[] = []
 
   for (const [fieldKey, field] of Object.entries(fields)) {
-    if (!field.required || existingFieldKeys.has(fieldKey)) continue
+    const hadFieldBefore = Object.prototype.hasOwnProperty.call(existingFields, fieldKey)
+    const wasRequiredBefore = hadFieldBefore ? existingFields[fieldKey].required : false
+    const isNewlyRequired = field.required && !wasRequiredBefore
+    if (!isNewlyRequired) continue
 
     const decision = getBackfillDecisionForNewRequiredField({
       field,
@@ -266,7 +296,7 @@ export async function updateEntity(
     /*-------- Validate + sanitize defaults for backfill --------*/
     const defaultsResult = sanitizeDefaultsForNewRequiredFields({
       fields: parsed.data.fields,
-      existingFieldKeys,
+      existingFields,
       rawDefaultValues: payload.defaultValues,
     })
 
@@ -312,7 +342,7 @@ export async function updateEntity(
           .where(eq(recordsTable.entityId, payload.id))
 
         for (const record of records) {
-          let currentFieldValues = record.fieldValues
+          let currentFieldValues = normalizeFieldValues(record.fieldValues)
           let needsUpdate = false
 
           // Step 1: Remove orphaned field values (fields that were deleted)
@@ -366,8 +396,6 @@ export async function updateEntity(
 
 /*---------------------- Error Handler -----------------------*/
 function handleUpdateError(error: unknown): ActionResult<{ id: string }> {
-  console.error('Update entity error:', error)
-
   // Handle Postgres errors using error codes
   if (error instanceof DatabaseError) {
     // 23505 = unique_violation

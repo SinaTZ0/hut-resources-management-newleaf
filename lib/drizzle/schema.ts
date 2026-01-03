@@ -44,7 +44,14 @@ export type FieldSchema = z.output<typeof fieldSchema>
 export type FieldSchemaInput = z.input<typeof fieldSchema>
 
 /*---------------------- Fields Schema -----------------------*/
-export const fieldsSchema = z.record(z.string(), fieldSchema)
+const forbiddenObjectKeys = new Set(['__proto__', 'prototype', 'constructor'])
+
+export const fieldsSchema = z.record(
+  z.string().refine((key) => !forbiddenObjectKeys.has(key), {
+    message: 'Invalid field key',
+  }),
+  fieldSchema
+)
 
 export type FieldsSchema = z.output<typeof fieldsSchema>
 export type FieldsSchemaInput = z.input<typeof fieldsSchema>
