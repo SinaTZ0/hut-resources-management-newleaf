@@ -119,6 +119,7 @@ export function RecordForm({ mode, entity, initialData }: RecordFormProps) {
       entityId: entity.id,
       fieldValues,
       metadata,
+      assets: null,
     })
 
     if (!result.success) {

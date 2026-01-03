@@ -1,11 +1,12 @@
 'use client'
 
 import { type ColumnDef } from '@tanstack/react-table'
-import { ArrowUpDown, MoreHorizontal, Loader2 } from 'lucide-react'
+import { ArrowUpDown, MoreHorizontal, Loader2, ImageOff } from 'lucide-react'
 import { useState } from 'react'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
+import Image from 'next/image'
 
 import {
   AlertDialog,
@@ -215,7 +216,38 @@ export function generateDynamicColumns(
     columns.push(selectColumn)
   }
 
-  columns.push(idColumn, ...fieldColumns, hasMetadataColumn, createdAtColumn, actionsColumn)
+  /*--------------------- Thumbnail Column ---------------------*/
+  const thumbnailColumn: ColumnDef<DynamicRecord> = {
+    id: 'thumbnail',
+    header: '',
+    cell: ({ row }) => {
+      const assets = row.original.assets
+      const thumbnailPath = assets?.thumbnail?.path
+
+      return (
+        <div className='relative h-10 w-10 overflow-hidden rounded-md border bg-muted'>
+          {thumbnailPath ? (
+            <Image src={thumbnailPath} alt='Thumbnail' fill className='object-cover' sizes='40px' />
+          ) : (
+            <div className='flex h-full w-full items-center justify-center'>
+              <ImageOff className='h-4 w-4 text-muted-foreground/50' />
+            </div>
+          )}
+        </div>
+      )
+    },
+    enableSorting: false,
+    enableHiding: false,
+  }
+
+  columns.push(
+    thumbnailColumn,
+    idColumn,
+    ...fieldColumns,
+    hasMetadataColumn,
+    createdAtColumn,
+    actionsColumn
+  )
 
   return columns
 }

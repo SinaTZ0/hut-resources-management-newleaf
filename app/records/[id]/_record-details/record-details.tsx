@@ -10,6 +10,8 @@ import type { RecordWithEntityDetails } from '@/app/records/queries/get-record-w
 import { FieldValuesDisplay } from './field-values-display'
 import { MetadataDisplay } from './metadata-display'
 import { CopyIdButton } from './copy-id-button'
+import { ThumbnailDisplay } from './thumbnail-display'
+import { AssetsDisplay } from './assets-display'
 
 /*------------------------ Props Type ------------------------*/
 type RecordDetailsProps = Readonly<{
@@ -24,6 +26,7 @@ export function RecordDetails({ record }: RecordDetailsProps) {
     record.metadata !== null &&
     typeof record.metadata === 'object' &&
     Object.keys(record.metadata).length > 0
+  const hasThumbnail = !!record.assets?.thumbnail?.path
 
   const createdDate = record.createdAt.toLocaleDateString('en-US', {
     year: 'numeric',
@@ -47,6 +50,16 @@ export function RecordDetails({ record }: RecordDetailsProps) {
             <span className='sr-only'>Back to records</span>
           </Link>
         </Button>
+
+        {/*--------------------- Header Thumbnail ---------------------*/}
+        {hasThumbnail && (
+          <ThumbnailDisplay
+            path={record.assets?.thumbnail?.path}
+            size='md'
+            testId='record-details-header-thumbnail'
+          />
+        )}
+
         <div className='space-y-1'>
           <div className='flex items-center gap-3'>
             <h1 className='text-2xl font-bold tracking-tight' data-testid='record-details-title'>
@@ -140,6 +153,9 @@ export function RecordDetails({ record }: RecordDetailsProps) {
           <MetadataDisplay values={record.metadata} />
         </CardContent>
       </Card>
+
+      {/*----------------------- Assets Card ------------------------*/}
+      <AssetsDisplay recordId={record.id} assets={record.assets} testId='record-details-assets' />
 
       {/*------------------------ Action Bar ------------------------*/}
       <div className='flex justify-end'>
